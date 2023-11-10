@@ -1,9 +1,9 @@
 # Changes here will be overwritten by Copier
-_commit: HEAD
+_commit: e90adc7
 _src_path: https://github.com/Ingenjorsarbete-For-Klimatet/ifk-python-template.git
-author: IFK
-email: info@ingenjorsarbeteforklimatet.se
-module_name: test_module
-package_name: test_package
-project_description: Unspecified.
-project_name: ifk-testing
+author: Mladen Gibanica
+email: 11275336+mgcth@users.noreply.github.com
+module_name: lantmateriet
+package_name: geometry
+project_description: Parse data from Lantmäteriet.
+project_name: ifk-lantmateriet
