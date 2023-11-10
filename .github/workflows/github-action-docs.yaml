@@ -28,10 +28,6 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Recopy
-        run: |
-          pip install copier
-          copier recopy $project --force
       - name: Setup Pages
         uses: actions/configure-pages@v2
       - name: Install MkDocs
