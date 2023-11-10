@@ -1,4 +1,6 @@
 """Geometry module."""
+from copy import deepcopy
+
 import geopandas as gpd
 from lantmateriet.utils import timeit
 
@@ -29,8 +31,9 @@ class DissolveTouchingGeometry:
         """
         return self.df.sindex
 
+    @staticmethod
     def _format_touching_geometries(
-        self, input_geometry_index: list, touching_geometry_index: list
+        input_geometry_index: list, touching_geometry_index: list
     ) -> dict:
         """Put touching geometries into a dictionary.
 
@@ -50,7 +53,8 @@ class DissolveTouchingGeometry:
 
         return touching_geometries
 
-    def _connect_touching_geometries(self, touching_geometries: dict) -> dict:
+    @staticmethod
+    def _connect_touching_geometries(touching_geometries: dict) -> dict:
         """Connect all touching geometries, including duplicates.
 
         Args:
@@ -59,39 +63,50 @@ class DissolveTouchingGeometry:
         Returns:
             connected touching geometries
         """
-        return {
-            primary_index: self._find_connected_geometries(
-                touching_geometries, secondary_indices
-            )
-            for primary_index, secondary_indices in list(touching_geometries.items())
-        }
+        connected_touching_geometries = deepcopy(touching_geometries)
 
-    def _find_connected_geometries(
-        self, touching_geometries: dict, subset_touching_geometries: set
-    ) -> set:
-        """Recursive function finding connected geometries.
+        for _, touching_indices in list(connected_touching_geometries.items()):
+            while True:
+                connected_indices = touching_indices.copy()
 
-        Args:
-            touching_geometries: map of all touching geometries
-            subset_touching_geometries: list of geometries touching
+                for i in touching_indices:
+                    connected_indices.update(connected_touching_geometries[i])
+                    connected_touching_geometries[i].update(touching_indices)
 
-        Returns:
-            list of all connected geometries
-        """
-        connected_touching_geometries = subset_touching_geometries.copy()
+                if not connected_indices - touching_indices:
+                    break
 
-        for index in subset_touching_geometries:
-            if index in touching_geometries:
-                connected_touching_geometries.update(touching_geometries[index])
-
-        if connected_touching_geometries - subset_touching_geometries:
-            connected_touching_geometries.update(
-                self._find_connected_geometries(
-                    touching_geometries, connected_touching_geometries
-                )
-            )
+                touching_indices = connected_indices
 
         return connected_touching_geometries
+
+    # @staticmethod
+    # def _find_connected_geometries(
+    #     touching_geometries: dict, subset_touching_geometries: set
+    # ) -> set:
+    #     """Recursive function finding connected geometries.
+
+    #     Args:
+    #         touching_geometries: map of all touching geometries
+    #         subset_touching_geometries: list of geometries touching
+
+    #     Returns:
+    #         list of all connected geometries
+    #     """
+    #     connected_touching_geometries = subset_touching_geometries.copy()
+
+    #     for index in subset_touching_geometries:
+    #         if index in touching_geometries:
+    #             connected_touching_geometries.update(touching_geometries[index])
+
+    #     if connected_touching_geometries - subset_touching_geometries:
+    #         connected_touching_geometries.update(
+    #             DissolveTouchingGeometry._find_connected_geometries(
+    #                 touching_geometries, connected_touching_geometries
+    #             )
+    #         )
+
+    #     return connected_touching_geometries
 
     def _remove_duplicate_geometries(self, touching_geometries: dict) -> dict:
         """Remove duplicate geometries.
@@ -133,8 +148,10 @@ class DissolveTouchingGeometry:
             self.df["geometry"], exclusive=True, max_distance=TOUCHING_MAX_DIST
         )
 
-        disconnected_touching_geometries = self._format_touching_geometries(
-            input_geometry_index, touching_geometry_index
+        disconnected_touching_geometries = (
+            DissolveTouchingGeometry._format_touching_geometries(
+                input_geometry_index, touching_geometry_index
+            )
         )
         connected_touching_geometries = self._connect_touching_geometries(
             disconnected_touching_geometries
