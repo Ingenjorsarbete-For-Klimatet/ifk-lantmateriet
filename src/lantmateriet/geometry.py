@@ -1,13 +1,10 @@
 """Geometry module."""
-from os import path
-import fiona
-import pandas as pd
-import geopandas as gpd
 from multiprocessing import Pool
-from shapely.ops import linemerge
-from shapely.geometry import Polygon
+from os import path
+
+import geopandas as gpd
 from lantmateriet.config import config
-from lantmateriet.utils import timeit, smap
+from lantmateriet.utils import smap, timeit
 
 WORKERS = 6
 TOUCHING_MAX_DIST = 1e-5
@@ -111,7 +108,7 @@ class DissolveTouchingGeometry:
             unique connected touching geometries
         """
         all_primary_index = set()
-        all_secondary_indices = set()
+        all_secondary_indices: set = set()
 
         for primary_index, secondary_indices in touching_geometries.items():
             if len(all_secondary_indices) == 0:
@@ -202,28 +199,36 @@ class DissolveTouchingGeometry:
 class Geometry:
     """Geometry class."""
 
-    def __init__(self, file_path: str, **kwargs):
+    def __init__(self, file_path: str, layer: str, use_arrow: bool):
         """Initialise Geometry object.
 
         Args:
             file_path: path to border data
-            **kwargs: keyword arguments passed to read_file
+            layer: layer to load
+            use_arrow: use arrow to load file
         """
-        self.df = gpd.read_file(file_path, **kwargs)
+        self.df = gpd.read_file(file_path, layer, use_arrow)
 
 
 class Ground(Geometry):
     """Ground class."""
 
-    def __init__(self, file_path: str, detail_level: str = "50", **kwargs):
+    def __init__(
+        self,
+        file_path: str,
+        detail_level: str = "50",
+        layer: str = "mark",
+        use_arrow: bool = True,
+    ):
         """Initialise Ground object.
 
         Args:
             file_path: path to border data
             detail_level: level of detail of data
-            **kwargs: keyword arguments passed to read_file
+            layer: layer to load
+            use_arrow: use arrow for file-loading
         """
-        super().__init__(file_path, **kwargs)
+        super().__init__(file_path, layer, use_arrow)
 
         if detail_level == "50":
             self.config_ground = config.ground_50
@@ -234,7 +239,7 @@ class Ground(Geometry):
                 f"The level of detal {detail_level} is not implemented."
             )
 
-    def _get_ground_items(self) -> tuple[str, gpd.GeoDataFrame]:
+    def _get_ground_items(self) -> list[tuple[str, gpd.GeoDataFrame]]:
         """Get ground items.
 
         Returns:
@@ -333,7 +338,7 @@ class Ground(Geometry):
         Args:
             save_path: path to save files in
         """
-        for object_name, ground_item in self.get_ground(self.config_ground).items():
+        for object_name, ground_item in self.get_ground().items():
             file_name = self.config_ground[object_name]
             ground_item = ground_item.to_crs(config.epsg_4326)
             ground_item.to_file(path.join(save_path, file_name), driver="GeoJSON")

@@ -1,8 +1,8 @@
 """Utils module."""
-import time
 import logging
+import time
 from functools import wraps
-
+from typing import Callable
 
 logging.basicConfig()
 logging.getLogger().setLevel(logging.INFO)
@@ -18,7 +18,7 @@ def timeit(has_key: bool = True):
         decorated function
     """
 
-    def timeit_decorator(fun: callable):
+    def timeit_decorator(fun: Callable):
         @wraps(fun)
         def wrap(*args, **kw):
             t0 = time.perf_counter()

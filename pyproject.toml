@@ -48,3 +48,6 @@ select = ["E4", "E7", "E9", "W", "F", "B", "D", "I", "S"]
 ignore = ["D203", "D213", "S101"]
 unfixable = ["B", "S"]
 pydocstyle.convention = "google"
+
+[tool.mypy]
+ignore_missing_imports = true
