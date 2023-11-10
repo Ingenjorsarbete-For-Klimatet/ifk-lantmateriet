@@ -29,8 +29,8 @@ jobs:
         uses: schneegans/dynamic-badges-action@v1.6.0
         with:
           auth: ${{ secrets.BADGE_SECRET }}
-          gistID: 955d89d05ed9ca61fb3774bc68bbae33
-          filename: ifk-python-template-coverage-badge.json
+          gistID: 2ccf628cc03d6054da96e742d0aff094
+          filename: ifk-lantmateriet-coverage-badge.json
           label: Coverage
           message: ${{ env.total }}%
           minColorRange: 50
