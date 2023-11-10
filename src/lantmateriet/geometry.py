@@ -1,12 +1,7 @@
 """Geometry module."""
-from multiprocessing import Pool
-from os import path
-
 import geopandas as gpd
-from lantmateriet.config import config
-from lantmateriet.utils import smap, timeit
+from lantmateriet.utils import timeit
 
-WORKERS = 6
 TOUCHING_MAX_DIST = 1e-5
 BUFFER_DIST = 1e-8
 
@@ -209,92 +204,29 @@ class Geometry:
         """
         self.df = gpd.read_file(file_path, layer, use_arrow)
 
-
-class Ground(Geometry):
-    """Ground class."""
-
-    def __init__(
-        self,
-        file_path: str,
-        detail_level: str = "50",
-        layer: str = "mark",
-        use_arrow: bool = True,
-    ):
-        """Initialise Ground object.
-
-        Args:
-            file_path: path to border data
-            detail_level: level of detail of data
-            layer: layer to load
-            use_arrow: use arrow for file-loading
-        """
-        super().__init__(file_path, layer, use_arrow)
-
-        if detail_level == "50":
-            self.config_ground = config.ground_50
-        elif detail_level == "1m":
-            self.config_ground = config.ground_1m
-        else:
-            NotImplementedError(
-                f"The level of detal {detail_level} is not implemented."
-            )
-
-    def _get_ground_items(self) -> list[tuple[str, gpd.GeoDataFrame]]:
-        """Get ground items.
-
-        Returns:
-            list of file names and corresponding geodata
-        """
-        return [
-            (object_name, self.df[self.df["objekttyp"] == object_name])
-            for object_name, _ in self.config_ground.items()
-            if object_name not in config.exclude_ground
-        ]
-
-    def get_ground(self) -> dict[str, gpd.GeoDataFrame]:
-        """Get all ground items.
-
-        Returns:
-            map of ground items including
-
-        Raises:
-            KeyError
-        """
-        ground_items = set(self.df["objekttyp"])
-        if any([k not in ground_items for k, _ in self.config_ground.items()]):
-            raise KeyError(
-                "Can't find all items in ground dict. Has the input data changed?"
-            )
-
-        ground = [
-            (
-                Ground._dissolve_exterior
-                if object_name in config.exteriorise
-                else Ground._dissolve,
-                object_name,
-                ground_item,
-            )
-            for object_name, ground_item in self._get_ground_items()
-        ]
-
-        with Pool(WORKERS) as pool:
-            ground_dissolved = pool.starmap(smap, ground)
-
-        return {
-            object_name: ground_items for object_name, ground_items in ground_dissolved
-        }
-
     @staticmethod
-    def _set_area_and_length(df):
-        """Set area and length for each geometry.
+    def _set_area(df: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+        """Set area for each geometry.
 
         Args:
             df: geopandas GeoDataFrame
 
         Returns:
-            geopandas GeoDataFrame with area and length columns
+            geopandas GeoDataFrame with area columns
         """
         df["area_m2"] = df.area
+        return df
+
+    @staticmethod
+    def _set_length(df: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+        """Set length for each geometry.
+
+        Args:
+            df: geopandas GeoDataFrame
+
+        Returns:
+            geopandas GeoDataFrame with length columns
+        """
         df["length_m"] = df.length
         return df
 
@@ -313,7 +245,8 @@ class Ground(Geometry):
             object name and dissolved geopandas GeoDataFrame
         """
         df_dissolved = DissolveTouchingGeometry(df).dissolve_and_explode()
-        return (object_name, Ground._set_area_and_length(df_dissolved))
+
+        return (object_name, df_dissolved)
 
     @timeit(True)
     @staticmethod
@@ -330,15 +263,4 @@ class Ground(Geometry):
             object name and dissolved geopandas GeoDataFrame
         """
         df_dissolved = DissolveTouchingGeometry(df).dissolve_and_explode_exterior()
-        return (object_name, Ground._set_area_and_length(df_dissolved))
-
-    def save_ground(self, save_path: str):
-        """Save processed ground items in EPSG:4326 as GeoJSON.
-
-        Args:
-            save_path: path to save files in
-        """
-        for object_name, ground_item in self.get_ground().items():
-            file_name = self.config_ground[object_name]
-            ground_item = ground_item.to_crs(config.epsg_4326)
-            ground_item.to_file(path.join(save_path, file_name), driver="GeoJSON")
+        return (object_name, df_dissolved)
