@@ -29,7 +29,7 @@ jobs:
         uses: schneegans/dynamic-badges-action@v1.6.0
         with:
           auth: ${{ secrets.BADGE_SECRET }}
-          gistID: 2ccf628cc03d6054da96e742d0aff094
+          gistID: e2326bc24f74f346a118a97b09e852ec
           filename: ifk-lantmateriet-coverage-badge.json
           label: Coverage
           message: ${{ env.total }}%
