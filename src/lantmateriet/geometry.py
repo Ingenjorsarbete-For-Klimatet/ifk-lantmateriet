@@ -150,18 +150,14 @@ class DissolveTouchingGeometry:
             self.df["geometry"], exclusive=True, max_distance=TOUCHING_MAX_DIST
         )
 
-        disconnected_touching_geometries = (
-            DissolveTouchingGeometry._format_touching_geometries(
-                input_geometry_index, touching_geometry_index
-            )
+        disconnected_touching_geometries = self._format_touching_geometries(
+            input_geometry_index, touching_geometry_index
         )
         connected_touching_geometries = self._connect_touching_geometries(
             disconnected_touching_geometries
         )
 
-        return DissolveTouchingGeometry._remove_duplicate_geometries(
-            connected_touching_geometries
-        )
+        return self._remove_duplicate_geometries(connected_touching_geometries)
 
     def _get_df_indices(self, touching_geometries: dict) -> tuple[list, list]:
         """Get df index to keep and drop.
@@ -220,10 +216,10 @@ class DissolveTouchingGeometry:
             GeoPandas dataframe with dissolved and exploded exterior geometry objects
         """
         exploded_geometry = self.df.explode(index_parts=False)
-        exploded_geometry = gpd.GeoDataFrame(
+        exploded_geometry.geometry = gpd.GeoDataFrame(
             {"geometry": polygonize(exploded_geometry.exterior)},
             index=exploded_geometry.index,
-        )
+        ).geometry
         return exploded_geometry.dissolve().explode(index_parts=False)
 
 
