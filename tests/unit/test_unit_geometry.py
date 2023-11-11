@@ -1,8 +1,10 @@
 """Geometry unit tests."""
+from unittest.mock import patch
+
 import geopandas as gpd
 import pytest
 from geopandas import testing
-from lantmateriet.geometry import DissolveTouchingGeometry
+from lantmateriet.geometry import DissolveTouchingGeometry, Geometry
 from shapely.geometry import Point, Polygon
 
 
@@ -578,3 +580,97 @@ class TestUnitDissolveTouchingGeometry:
         dtg = DissolveTouchingGeometry(df)
         result = dtg.dissolve_and_explode_exterior()
         testing.assert_geodataframe_equal(expected_result, result)
+
+
+class TestUnitGeometry:
+    """Unit tests of Geometry."""
+
+    @patch("lantmateriet.geometry.gpd.read_file")
+    def test_unit_init(self, mock_read_file):
+        """Unit test of Geometry __init__ method.
+
+        Args:
+            mock_read_file: mock of read_file
+        """
+        _ = Geometry("filename", layer="mask", use_arrow=True)
+        mock_read_file.assert_called_with("filename", layer="mask", use_arrow=True)
+
+    @pytest.mark.parametrize(
+        "input_df",
+        [
+            gpd.GeoDataFrame(
+                {
+                    "geometry": [
+                        Polygon(
+                            [(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)],
+                        ),
+                    ]
+                },
+            ),
+        ],
+    )
+    def test_unit_set_area(self, input_df):
+        """Unit test of Geometry _set_area method.
+
+        Args:
+            input_df: input_df
+        """
+        result = Geometry._set_area(input_df)
+        assert "area_m2" in result
+
+    @pytest.mark.parametrize(
+        "input_df",
+        [
+            gpd.GeoDataFrame(
+                {
+                    "geometry": [
+                        Polygon(
+                            [(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)],
+                        ),
+                    ]
+                },
+            ),
+        ],
+    )
+    def test_unit_set_length(self, input_df):
+        """Unit test of Geometry _set_length method.
+
+        Args:
+            input_df: input_df
+        """
+        result = Geometry._set_length(input_df)
+        assert "length_m" in result
+
+    @patch("lantmateriet.geometry.DissolveTouchingGeometry")
+    def test_unit_dissolve(self, mock_DissolveTouchingGeometry):
+        """Unit test of Geometry _dissolve method.
+
+        Args:
+            mock_DissolveTouchingGeometry: mock of mock_DissolveTouchingGeometry
+        """
+        object_name, df = "object_name", gpd.GeoDataFrame()
+        result = Geometry._dissolve(object_name, df)
+        assert object_name == result[0]
+        assert (
+            mock_DissolveTouchingGeometry.return_value.dissolve_and_explode.return_value
+            == result[1]
+        )
+        mock_DissolveTouchingGeometry.assert_called_with(df)
+        mock_DissolveTouchingGeometry.return_value.dissolve_and_explode.assert_called()
+
+    @patch("lantmateriet.geometry.DissolveTouchingGeometry")
+    def test_unit_dissolve_exterior(self, mock_DissolveTouchingGeometry):
+        """Unit test of Geometry _dissolve_exterior method.
+
+        Args:
+            mock_DissolveTouchingGeometry: mock of mock_DissolveTouchingGeometry
+        """
+        object_name, df = "object_name", gpd.GeoDataFrame()
+        result = Geometry._dissolve_exterior(object_name, df)
+        assert object_name == result[0]
+        assert (
+            mock_DissolveTouchingGeometry.return_value.dissolve_and_explode_exterior.return_value
+            == result[1]
+        )
+        mock_DissolveTouchingGeometry.assert_called_with(df)
+        mock_DissolveTouchingGeometry.return_value.dissolve_and_explode_exterior.assert_called()
