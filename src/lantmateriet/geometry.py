@@ -207,20 +207,24 @@ class DissolveTouchingGeometry:
         ]
         self.df.drop(index=drop_indices, inplace=True)
 
-        return self.df.explode(index_parts=False)
+        return self.df.explode(ignore_index=True)
 
     def dissolve_and_explode_exterior(self) -> gpd.GeoDataFrame:
         """Dissolve and explode exterior geometry.
 
+        This function doesn't keep any other data apart from geometry.
+
         Returns:
             GeoPandas dataframe with dissolved and exploded exterior geometry objects
         """
-        exploded_geometry = self.df.explode(index_parts=False)
-        exploded_geometry.geometry = gpd.GeoDataFrame(
-            {"geometry": polygonize(exploded_geometry.exterior)},
-            index=exploded_geometry.index,
-        ).geometry
-        return exploded_geometry.dissolve().explode(index_parts=False)
+        exploded_geometry = self.df.explode(ignore_index=True)
+        exterior_geometry = exploded_geometry
+        exterior_geometry.geometry = exterior_geometry.exterior
+        dissolved_geometry = exterior_geometry.dissolve()
+        exploded_geometry = dissolved_geometry.explode(ignore_index=True)
+        return gpd.GeoDataFrame(
+            {"geometry": [x for x in polygonize(exploded_geometry.geometry)]}
+        )
 
 
 class Geometry:

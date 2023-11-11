@@ -415,7 +415,7 @@ class TestUnitDissolveTouchingGeometry:
                             )
                         ),
                     },
-                    index=[1],
+                    index=[0],
                 ),
             ),
             (
@@ -476,7 +476,7 @@ class TestUnitDissolveTouchingGeometry:
                             ),
                         ]
                     },
-                    index=[1, 3],
+                    index=[0, 1],
                 ),
             ),
         ],
@@ -563,7 +563,7 @@ class TestUnitDissolveTouchingGeometry:
                             ),
                         ]
                     },
-                    index=[0, 0],
+                    index=[0, 1],
                 ),
             ),
         ],
