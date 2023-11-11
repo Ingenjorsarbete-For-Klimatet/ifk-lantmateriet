@@ -7,15 +7,15 @@ from shapely.geometry import Point, Polygon
 
 
 class TestUnitDissolveTouchingGeometry:
-    """Unit test of DissolveTouchingGeometry."""
+    """Unit tests of DissolveTouchingGeometry."""
 
-    def test_integration_dissolvetouchinggeometry_init(self):
+    def test_unit_dissolvetouchinggeometry_init(self):
         """Unit test of DissolveTouchingGeometry init method."""
         df = gpd.GeoDataFrame()
         dtg = DissolveTouchingGeometry(df)
         testing.assert_geodataframe_equal(dtg.df, df)
 
-    def test_integration_dissolvetouchinggeometry_get_spatial_index(self):
+    def test_unit_dissolvetouchinggeometry_get_spatial_index(self):
         """Unit test of DissolveTouchingGeometry _get_spatial_index method."""
         df = gpd.GeoDataFrame({"geometry": [Point(1, 2), Point(2, 1)]})
         sindex = DissolveTouchingGeometry(df)._get_spatial_index()
@@ -52,7 +52,7 @@ class TestUnitDissolveTouchingGeometry:
             ),
         ],
     )
-    def test_integration_dissolvetouchinggeometry_format_touching_geometries(
+    def test_unit_dissolvetouchinggeometry_format_touching_geometries(
         self, input_geometry, touching_geometry, expected_result
     ):
         """Unit test of DissolveTouchingGeometry _format_touching_geometries method.
@@ -111,7 +111,7 @@ class TestUnitDissolveTouchingGeometry:
             ),
         ],
     )
-    def test_integration_dissolvetouchinggeometry_connect_touching_geometries(
+    def test_unit_dissolvetouchinggeometry_connect_touching_geometries(
         self, touching_geometry, expected_result
     ):
         """Unit test of DissolveTouchingGeometry _connect_touching_geometries method.
@@ -145,7 +145,7 @@ class TestUnitDissolveTouchingGeometry:
             ),
         ],
     )
-    def test_integration_dissolvetouchinggeometry_remove_duplicate_geometries(
+    def test_unit_dissolvetouchinggeometry_remove_duplicate_geometries(
         self, touching_geometry, expected_result
     ):
         """Unit test of DissolveTouchingGeometry _remove_duplicate_geometries method.
@@ -238,7 +238,7 @@ class TestUnitDissolveTouchingGeometry:
             ),
         ],
     )
-    def test_integration_dissolvetouchinggeometry_get_touching_geometries(
+    def test_unit_dissolvetouchinggeometry_get_touching_geometries(
         self, df, expected_result
     ):
         """Unit test of DissolveTouchingGeometry _get_touching_geometries method.
@@ -340,7 +340,7 @@ class TestUnitDissolveTouchingGeometry:
             ),
         ],
     )
-    def test_integration_dissolvetouchinggeometry_get_df_indices(
+    def test_unit_dissolvetouchinggeometry_get_df_indices(
         self, df, touching_geometry, expected_result
     ):
         """Unit test of DissolveTouchingGeometry _get_df_indices method.
@@ -479,7 +479,7 @@ class TestUnitDissolveTouchingGeometry:
             ),
         ],
     )
-    def test_integration_dissolvetouchinggeometry_dissolve_and_explode(
+    def test_unit_dissolvetouchinggeometry_dissolve_and_explode(
         self, df, expected_result
     ):
         """Unit test of DissolveTouchingGeometry dissolve_and_explode method.
@@ -566,7 +566,7 @@ class TestUnitDissolveTouchingGeometry:
             ),
         ],
     )
-    def test_integration_dissolvetouchinggeometry_dissolve_and_explode_exterior(
+    def test_unit_dissolvetouchinggeometry_dissolve_and_explode_exterior(
         self, df, expected_result
     ):
         """Unit test of DissolveTouchingGeometry dissolve_and_explode_exterior method.
