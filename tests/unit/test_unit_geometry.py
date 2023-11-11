@@ -3,7 +3,7 @@ import geopandas as gpd
 import pytest
 from geopandas import testing
 from lantmateriet.geometry import DissolveTouchingGeometry
-from shapely.geometry import Point
+from shapely.geometry import Point, Polygon
 
 
 class TestUnitDissolveTouchingGeometry:
@@ -124,3 +124,457 @@ class TestUnitDissolveTouchingGeometry:
             touching_geometry
         )
         assert expected_result == result
+
+    @pytest.mark.parametrize(
+        "touching_geometry, expected_result",
+        [
+            ({}, {}),
+            ({0: {0, 1}, 1: {1, 2}}, {0: [0, 1], 1: [1, 2]}),
+            (
+                {
+                    0: {0, 1, 2, 4},
+                    1: {0, 1, 2, 4},
+                    2: {0, 1, 2, 4},
+                    3: {3},
+                    4: {0, 1, 2, 4},
+                },
+                {
+                    3: [3],
+                    4: [0, 1, 2, 4],
+                },
+            ),
+        ],
+    )
+    def test_integration_dissolvetouchinggeometry_remove_duplicate_geometries(
+        self, touching_geometry, expected_result
+    ):
+        """Unit test of DissolveTouchingGeometry _remove_duplicate_geometries method.
+
+        Args:
+            touching_geometry: touching geometry index
+            expected_result: expected results
+        """
+        result = DissolveTouchingGeometry._remove_duplicate_geometries(
+            touching_geometry
+        )
+        assert expected_result == result
+
+    @pytest.mark.parametrize(
+        "df, expected_result",
+        [
+            (gpd.GeoDataFrame({"geometry": []}), {}),
+            (gpd.GeoDataFrame({"geometry": [Point(1, 2), Point(1, 2)]}), {}),
+            (
+                gpd.GeoDataFrame(
+                    {
+                        "geometry": [
+                            Polygon(
+                                (
+                                    (0.0, 0.0),
+                                    (1.0, 0.0),
+                                    (1.0, 1.0),
+                                    (0.0, 1.0),
+                                    (0.0, 0.0),
+                                )
+                            ),
+                            Polygon(
+                                (
+                                    (0.0, 0.0),
+                                    (1.0, 0.0),
+                                    (1.0, -1.0),
+                                    (0.0, -1.0),
+                                    (0.0, 0.0),
+                                )
+                            ),
+                            Polygon(
+                                (
+                                    (0.0, 1.0),
+                                    (1.0, 1.0),
+                                    (1.0, 2.0),
+                                    (0.0, 2.0),
+                                    (0.0, 1.0),
+                                )
+                            ),
+                        ]
+                    }
+                ),
+                {0: [0, 1, 2]},
+            ),
+            (
+                gpd.GeoDataFrame(
+                    {
+                        "geometry": [
+                            Polygon(
+                                (
+                                    (0.0, 0.0),
+                                    (1.0, 0.0),
+                                    (1.0, 1.0),
+                                    (0.0, 1.0),
+                                    (0.0, 0.0),
+                                )
+                            ),
+                            Polygon(
+                                (
+                                    (0.0, 0.0),
+                                    (1.0, 0.0),
+                                    (1.0, -1.0),
+                                    (0.0, -1.0),
+                                    (0.0, 0.0),
+                                )
+                            ),
+                            Polygon(
+                                (
+                                    (0.0, 2.0),
+                                    (1.0, 2.0),
+                                    (1.0, 3.0),
+                                    (0.0, 3.0),
+                                    (0.0, 2.0),
+                                )
+                            ),
+                        ]
+                    }
+                ),
+                {0: [0, 1]},
+            ),
+        ],
+    )
+    def test_integration_dissolvetouchinggeometry_get_touching_geometries(
+        self, df, expected_result
+    ):
+        """Unit test of DissolveTouchingGeometry _get_touching_geometries method.
+
+        Args:
+            df: df
+            expected_result: expected results
+        """
+        dtg = DissolveTouchingGeometry(df)
+        result = dtg._get_touching_geometries()
+        assert expected_result == result
+
+    @pytest.mark.parametrize(
+        "df, touching_geometry, expected_result",
+        [
+            (gpd.GeoDataFrame({"geometry": []}), {}, ([], [])),
+            (
+                gpd.GeoDataFrame(
+                    {"geometry": [Point(1, 2), Point(1, 2)]}, index=[1, 2]
+                ),
+                {},
+                ([], []),
+            ),
+            (
+                gpd.GeoDataFrame(
+                    {
+                        "geometry": [
+                            Polygon(
+                                (
+                                    (0.0, 0.0),
+                                    (1.0, 0.0),
+                                    (1.0, 1.0),
+                                    (0.0, 1.0),
+                                    (0.0, 0.0),
+                                )
+                            ),
+                            Polygon(
+                                (
+                                    (0.0, 0.0),
+                                    (1.0, 0.0),
+                                    (1.0, -1.0),
+                                    (0.0, -1.0),
+                                    (0.0, 0.0),
+                                )
+                            ),
+                            Polygon(
+                                (
+                                    (0.0, 1.0),
+                                    (1.0, 1.0),
+                                    (1.0, 2.0),
+                                    (0.0, 2.0),
+                                    (0.0, 1.0),
+                                )
+                            ),
+                        ]
+                    },
+                    index=[1, 2, 3],
+                ),
+                {0: [0, 1, 2]},
+                ([1], [2, 3]),
+            ),
+            (
+                gpd.GeoDataFrame(
+                    {
+                        "geometry": [
+                            Polygon(
+                                (
+                                    (0.0, 0.0),
+                                    (1.0, 0.0),
+                                    (1.0, 1.0),
+                                    (0.0, 1.0),
+                                    (0.0, 0.0),
+                                )
+                            ),
+                            Polygon(
+                                (
+                                    (0.0, 0.0),
+                                    (1.0, 0.0),
+                                    (1.0, -1.0),
+                                    (0.0, -1.0),
+                                    (0.0, 0.0),
+                                )
+                            ),
+                            Polygon(
+                                (
+                                    (0.0, 2.0),
+                                    (1.0, 2.0),
+                                    (1.0, 3.0),
+                                    (0.0, 3.0),
+                                    (0.0, 2.0),
+                                )
+                            ),
+                        ]
+                    },
+                    index=[1, 2, 3],
+                ),
+                {0: [0, 1]},
+                ([1], [2]),
+            ),
+        ],
+    )
+    def test_integration_dissolvetouchinggeometry_get_df_indices(
+        self, df, touching_geometry, expected_result
+    ):
+        """Unit test of DissolveTouchingGeometry _get_df_indices method.
+
+        Args:
+            df: df
+            touching_geometry: touching geometry index
+            expected_result: expected results
+        """
+        dtg = DissolveTouchingGeometry(df)
+        result = dtg._get_df_indices(touching_geometry)
+        assert expected_result == result
+
+    @pytest.mark.parametrize(
+        "df, expected_result",
+        [
+            (gpd.GeoDataFrame({"geometry": []}), gpd.GeoDataFrame({"geometry": []})),
+            (
+                gpd.GeoDataFrame(
+                    {"geometry": [Point(1, 2), Point(1, 2)]}, index=[1, 2]
+                ),
+                gpd.GeoDataFrame(
+                    {"geometry": [Point(1, 2), Point(1, 2)]}, index=[1, 2]
+                ),
+            ),
+            (
+                gpd.GeoDataFrame(
+                    {
+                        "geometry": [
+                            Polygon(
+                                (
+                                    (0.0, 0.0),
+                                    (1.0, 0.0),
+                                    (1.0, 1.0),
+                                    (0.0, 1.0),
+                                    (0.0, 0.0),
+                                )
+                            ),
+                            Polygon(
+                                (
+                                    (0.0, 0.0),
+                                    (1.0, 0.0),
+                                    (1.0, -1.0),
+                                    (0.0, -1.0),
+                                    (0.0, 0.0),
+                                )
+                            ),
+                            Polygon(
+                                (
+                                    (0.0, 1.0),
+                                    (1.0, 1.0),
+                                    (1.0, 2.0),
+                                    (0.0, 2.0),
+                                    (0.0, 1.0),
+                                )
+                            ),
+                        ]
+                    },
+                    index=[1, 2, 3],
+                ),
+                gpd.GeoDataFrame(
+                    {
+                        "geometry": Polygon(
+                            (
+                                (0.0, -1.0),
+                                (1.0, -1.0),
+                                (1.0, 2.0),
+                                (0.0, 2.0),
+                                (0.0, -1.0),
+                            )
+                        ),
+                    },
+                    index=[1],
+                ),
+            ),
+            (
+                gpd.GeoDataFrame(
+                    {
+                        "geometry": [
+                            Polygon(
+                                (
+                                    (0.0, 0.0),
+                                    (1.0, 0.0),
+                                    (1.0, 1.0),
+                                    (0.0, 1.0),
+                                    (0.0, 0.0),
+                                )
+                            ),
+                            Polygon(
+                                (
+                                    (0.0, 0.0),
+                                    (1.0, 0.0),
+                                    (1.0, -1.0),
+                                    (0.0, -1.0),
+                                    (0.0, 0.0),
+                                )
+                            ),
+                            Polygon(
+                                (
+                                    (0.0, 2.0),
+                                    (1.0, 2.0),
+                                    (1.0, 3.0),
+                                    (0.0, 3.0),
+                                    (0.0, 2.0),
+                                )
+                            ),
+                        ]
+                    },
+                    index=[1, 2, 3],
+                ),
+                gpd.GeoDataFrame(
+                    {
+                        "geometry": [
+                            Polygon(
+                                (
+                                    (0.0, -1.0),
+                                    (1.0, -1.0),
+                                    (1.0, 1.0),
+                                    (0.0, 1.0),
+                                    (0.0, -1.0),
+                                )
+                            ),
+                            Polygon(
+                                (
+                                    (0.0, 2.0),
+                                    (1.0, 2.0),
+                                    (1.0, 3.0),
+                                    (0.0, 3.0),
+                                    (0.0, 2.0),
+                                )
+                            ),
+                        ]
+                    },
+                    index=[1, 3],
+                ),
+            ),
+        ],
+    )
+    def test_integration_dissolvetouchinggeometry_dissolve_and_explode(
+        self, df, expected_result
+    ):
+        """Unit test of DissolveTouchingGeometry dissolve_and_explode method.
+
+        Args:
+            df: df
+            expected_result: expected results
+        """
+        dtg = DissolveTouchingGeometry(df)
+        result = dtg.dissolve_and_explode()
+        testing.assert_geodataframe_equal(expected_result, result)
+
+    @pytest.mark.parametrize(
+        "df, expected_result",
+        [
+            (gpd.GeoDataFrame({"geometry": []}), gpd.GeoDataFrame({"geometry": []})),
+            (
+                gpd.GeoDataFrame(
+                    {
+                        "geometry": [
+                            Polygon(
+                                [(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)],
+                                [
+                                    [
+                                        (0.25, 0.25),
+                                        (0.75, 0.25),
+                                        (0.75, 0.75),
+                                        (0.25, 0.75),
+                                        (0.25, 0.25),
+                                    ][::-1]
+                                ],
+                            ),
+                        ]
+                    },
+                    index=[1],
+                ),
+                gpd.GeoDataFrame(
+                    {
+                        "geometry": Polygon(
+                            [(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)],
+                        ),
+                    },
+                    index=[0],
+                ),
+            ),
+            (
+                gpd.GeoDataFrame(
+                    {
+                        "geometry": [
+                            Polygon(
+                                Polygon(
+                                    [(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)],
+                                    [
+                                        [
+                                            (0.25, 0.25),
+                                            (0.75, 0.25),
+                                            (0.75, 0.75),
+                                            (0.25, 0.75),
+                                            (0.25, 0.25),
+                                        ][::-1]
+                                    ],
+                                ),
+                            ),
+                            Polygon(
+                                [(0, 3), (1, 3), (1, 4), (0, 4), (0, 3)],
+                            ),
+                        ]
+                    },
+                    index=[1, 2],
+                ),
+                gpd.GeoDataFrame(
+                    {
+                        "geometry": [
+                            Polygon(
+                                [(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)],
+                            ),
+                            Polygon(
+                                [(0, 3), (1, 3), (1, 4), (0, 4), (0, 3)],
+                            ),
+                        ]
+                    },
+                    index=[0, 0],
+                ),
+            ),
+        ],
+    )
+    def test_integration_dissolvetouchinggeometry_dissolve_and_explode_exterior(
+        self, df, expected_result
+    ):
+        """Unit test of DissolveTouchingGeometry dissolve_and_explode_exterior method.
+
+        Args:
+            df: df
+            expected_result: expected results
+        """
+        dtg = DissolveTouchingGeometry(df)
+        result = dtg.dissolve_and_explode_exterior()
+        testing.assert_geodataframe_equal(expected_result, result)

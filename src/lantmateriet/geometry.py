@@ -3,6 +3,7 @@ from copy import deepcopy
 
 import geopandas as gpd
 from lantmateriet.utils import timeit
+from shapely.ops import polygonize
 
 TOUCHING_MAX_DIST = 1e-5
 BUFFER_DIST = 1e-8
@@ -108,7 +109,8 @@ class DissolveTouchingGeometry:
 
     #     return connected_touching_geometries
 
-    def _remove_duplicate_geometries(self, touching_geometries: dict) -> dict:
+    @staticmethod
+    def _remove_duplicate_geometries(touching_geometries: dict) -> dict:
         """Remove duplicate geometries.
 
         Args:
@@ -157,7 +159,9 @@ class DissolveTouchingGeometry:
             disconnected_touching_geometries
         )
 
-        return self._remove_duplicate_geometries(connected_touching_geometries)
+        return DissolveTouchingGeometry._remove_duplicate_geometries(
+            connected_touching_geometries
+        )
 
     def _get_df_indices(self, touching_geometries: dict) -> tuple[list, list]:
         """Get df index to keep and drop.
@@ -186,13 +190,25 @@ class DissolveTouchingGeometry:
             GeoPandas dataframe with dissolved, touching geometries, and exploded geometry objects
         """
         touching_geometries = self._get_touching_geometries()
+
+        if len(touching_geometries) == 0:
+            return self.df
+
         keep_indices, drop_indices = self._get_df_indices(touching_geometries)
 
         dissolved_geometry = [
-            self.df.iloc[list(tgi)].dissolve() for _, tgi in touching_geometries.items()
+            self.df.iloc[list(tgi)].dissolve().geometry[0]
+            for _, tgi in touching_geometries.items()
         ]
 
-        self.df.loc[keep_indices, "geometry"] = [x.geometry for x in dissolved_geometry]
+        dissolved_df = gpd.GeoDataFrame(
+            {"geometry": dissolved_geometry},
+            index=[index for index in keep_indices],
+        )
+
+        self.df.loc[keep_indices, "geometry"] = dissolved_df.loc[
+            keep_indices, "geometry"
+        ]
         self.df.drop(index=drop_indices, inplace=True)
 
         return self.df.explode(index_parts=False)
@@ -204,8 +220,11 @@ class DissolveTouchingGeometry:
             GeoPandas dataframe with dissolved and exploded exterior geometry objects
         """
         exploded_geometry = self.df.explode(index_parts=False)
-        exploded_geometry.geometry = exploded_geometry.exterior
-        return exploded_geometry.dissolve()
+        exploded_geometry = gpd.GeoDataFrame(
+            {"geometry": polygonize(exploded_geometry.exterior)},
+            index=exploded_geometry.index,
+        )
+        return exploded_geometry.dissolve().explode(index_parts=False)
 
 
 class Geometry:
@@ -219,7 +238,7 @@ class Geometry:
             layer: layer to load
             use_arrow: use arrow to load file
         """
-        self.df = gpd.read_file(file_path, layer, use_arrow)
+        self.df = gpd.read_file(file_path, layer=layer, use_arrow=use_arrow)
 
     @staticmethod
     def _set_area(df: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
@@ -262,7 +281,6 @@ class Geometry:
             object name and dissolved geopandas GeoDataFrame
         """
         df_dissolved = DissolveTouchingGeometry(df).dissolve_and_explode()
-
         return (object_name, df_dissolved)
 
     @timeit(True)
