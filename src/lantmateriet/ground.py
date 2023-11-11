@@ -35,7 +35,7 @@ class Ground(Geometry):
         elif detail_level == "1m":
             self.config = config.ground_1m
         else:
-            NotImplementedError(
+            raise NotImplementedError(
                 f"The level of detal {detail_level} is not implemented."
             )
 
@@ -67,9 +67,9 @@ class Ground(Geometry):
             KeyError
         """
         ground_items = set(self.df["objekttyp"])
-        if any([k not in ground_items for k, _ in self.config.items()]):
+        if ground_items != set(self.config.keys()):
             raise KeyError(
-                "Can't find all items in ground dict. Has the input data changed?"
+                "Data objekttyp not equal to ground dict. Has the input data changed?"
             )
 
         ground = [
