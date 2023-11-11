@@ -87,10 +87,12 @@ class Ground(Geometry):
             ground_dissolved = pool.starmap(smap, ground)
 
         if set_area is True:
-            ground_dissolved = self._set_area(ground_dissolved)
+            ground_dissolved = [(k, Geometry._set_area(v)) for k, v in ground_dissolved]
 
         if set_length is True:
-            ground_dissolved = self._set_length(ground_dissolved)
+            ground_dissolved = [
+                (k, Geometry._set_length(v)) for k, v in ground_dissolved
+            ]
 
         return {
             object_name: ground_items for object_name, ground_items in ground_dissolved
