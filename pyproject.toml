@@ -12,7 +12,7 @@ authors = [
     { name = "Mladen Gibanica", email = "11275336+mgcth@users.noreply.github.com" },
 ]
 requires-python = ">=3.9"
-dependencies = []
+dependencies = ["geopandas ~= 0.14", "pyogrio ~= 0.6.0", "pyarrow ~= 14.0"]
 
 [project.optional-dependencies]
 lint = [
@@ -31,6 +31,8 @@ dev = [
     "ifk-lantmateriet[test]",
     "ifk-lantmateriet[doc]",
     "pre-commit ~= 2.20",
+    "matplotlib ~= 3.8",
+    "ipykernel ~= 6.26",
 ]
 
 [tool.setuptools.packages.find]
@@ -45,3 +47,7 @@ extend-include = ["*.ipynb"]
 select = ["E4", "E7", "E9", "W", "F", "B", "D", "I", "S"]
 ignore = ["D203", "D213", "S101"]
 unfixable = ["B", "S"]
+pydocstyle.convention = "google"
+
+[tool.mypy]
+ignore_missing_imports = true
