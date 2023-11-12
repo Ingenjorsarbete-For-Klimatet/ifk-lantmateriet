@@ -1,6 +1,7 @@
 """Ground module."""
 from multiprocessing import Pool
 from os import path
+from typing import Union
 
 import geopandas as gpd
 from lantmateriet import config
@@ -36,7 +37,7 @@ class Ground(Geometry):
         self.items = set(self.df["objekttyp"])
 
         if detail_level == "50":
-            self.config = config.config_50
+            self.config: Union[config.Config1M, config.Config50] = config.config_50
         elif detail_level == "1m":
             self.config = config.config_1m
         else:
