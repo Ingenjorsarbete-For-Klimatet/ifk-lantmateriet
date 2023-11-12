@@ -26,7 +26,7 @@ class TestIntegrationGround:
         ground = Ground(
             "tests/fixtures/test_integration_ground_mark.gpkg", "50", "mark", True
         )
-        df = ground.get_ground()
+        df = ground.process()
         df = pd.concat([v for _, v in df.items()], ignore_index=True)
 
         testing.assert_geodataframe_equal(df, test_mark_result, check_like=True)

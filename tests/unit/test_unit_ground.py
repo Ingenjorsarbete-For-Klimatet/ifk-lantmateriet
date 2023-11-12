@@ -33,7 +33,7 @@ class TestUnitGround:
                         "objekttyp": [
                             k
                             for k in config.config_50.ground.keys()
-                            if k not in config.config_50.exclude
+                            if k not in {"Sjö"}
                         ]
                     }
                 ),
