@@ -3,7 +3,7 @@ from multiprocessing import Pool
 from os import path
 
 import geopandas as gpd
-from lantmateriet.config import config
+from lantmateriet import config
 from lantmateriet.geometry import Geometry
 from lantmateriet.utils import smap
 
@@ -27,16 +27,26 @@ class Ground(Geometry):
             detail_level: level of detail of data
             layer: layer to load
             use_arrow: use arrow for file-loading
+
+        Raises:
+            NotImplementedError: if detail level not implemented
+            KeyError: if data objekttyp not equal to ground dict
         """
         super().__init__(file_path, layer, use_arrow)
+        self.items = set(self.df["objekttyp"])
 
         if detail_level == "50":
-            self.config = config.ground_50
+            self.config = config.config_50
         elif detail_level == "1m":
-            self.config = config.ground_1m
+            self.config = config.config_1m
         else:
             raise NotImplementedError(
                 f"The level of detal {detail_level} is not implemented."
+            )
+
+        if self.items != set(self.config.ground.keys()):
+            raise KeyError(
+                "Data objekttyp not equal to ground dict. Has the input data changed?"
             )
 
     def _get_ground_items(self) -> list[tuple[str, gpd.GeoDataFrame]]:
@@ -47,9 +57,38 @@ class Ground(Geometry):
         """
         return [
             (object_name, self.df[self.df["objekttyp"] == object_name])
-            for object_name, _ in self.config.items()
-            if object_name not in config.exclude_ground
+            for object_name, _ in self.config.ground.items()
+            if object_name not in self.config.exclude_ground
         ]
+
+    def _prepare_parallel_list(self):
+        """Prepare list for parallel processing.
+
+        Returns:
+            list of tuples of functions and data
+        """
+        return [
+            (
+                Ground._dissolve_exterior
+                if object_name in self.config.exteriorise
+                else Ground._dissolve,
+                object_name,
+                ground_item,
+            )
+            for object_name, ground_item in self._get_ground_items()
+        ]
+
+    def _execute_dissolve_parallel(self):
+        """Execute parallel processing of dissolve.
+
+        Returns:
+            dissolved data
+        """
+        ground = self._prepare_parallel_list()
+        with Pool(WORKERS) as pool:
+            ground_dissolved = pool.starmap(smap, ground)
+
+        return ground_dissolved
 
     def get_ground(
         self, set_area: bool = True, set_length: bool = True
@@ -62,29 +101,8 @@ class Ground(Geometry):
 
         Returns:
             map of ground items including
-
-        Raises:
-            KeyError
         """
-        ground_items = set(self.df["objekttyp"])
-        if ground_items != set(self.config.keys()):
-            raise KeyError(
-                "Data objekttyp not equal to ground dict. Has the input data changed?"
-            )
-
-        ground = [
-            (
-                Ground._dissolve_exterior
-                if object_name in config.exteriorise
-                else Ground._dissolve,
-                object_name,
-                ground_item,
-            )
-            for object_name, ground_item in self._get_ground_items()
-        ]
-
-        with Pool(WORKERS) as pool:
-            ground_dissolved = pool.starmap(smap, ground)
+        ground_dissolved = self._execute_dissolve_parallel()
 
         if set_area is True:
             ground_dissolved = [(k, Geometry._set_area(v)) for k, v in ground_dissolved]
@@ -108,6 +126,6 @@ class Ground(Geometry):
             save_path: path to save files in
         """
         for object_name, ground_item in all_ground_items.items():
-            file_name = self.config[object_name]
-            ground_item = ground_item.to_crs(config.epsg_4326)
+            file_name = self.config.ground[object_name]
+            ground_item = ground_item.to_crs(self.config.epsg_4326)
             ground_item.to_file(path.join(save_path, file_name), driver="GeoJSON")

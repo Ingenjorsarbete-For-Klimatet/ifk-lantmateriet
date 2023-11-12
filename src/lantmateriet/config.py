@@ -1,19 +1,46 @@
 """Config module."""
 
 
-class Config:
-    """Config class."""
+class BaseConfig:
+    """Base config class."""
 
     espg_3006: str = "EPSG:3006"
     epsg_4326: str = "EPSG:4326"
+    ground_sweden: str = "00_sverige.geojson"
 
     border_land: str = "Riksgräns"
     border_sea: str = "Sjöterritoriets gräns i havet"
     border_county: str = "Länsgräns"
     border_municipality: str = "Kommungräns"
 
-    ground_sweden: str = "00_sverige.geojson"
-    ground_50: dict[str, str] = {
+
+class Config1M(BaseConfig):
+    """Topography 1M config class."""
+
+    ground: dict[str, str] = {
+        "Vattenyta": "01_vattenyta.geojson",
+        "Glaciär": "05_glaciar.geojson",
+        "Kalfjäll": "08_kalfjall.geojson",
+        "Skog": "02_skog.geojson",
+        "Öppen mark": "15_oppen_mark.geojson",
+        "Bebyggelse": "06_bebygelse.geojson",
+        "Hav": "16_hav.geojson",
+        "Ej karterat område": "17_ej_kartlagt.geojson",
+    }
+    exclude_ground = {"Hav", "Ej karterat område"}
+
+    ground_water = {
+        "Hav",
+        "Vattenyta",
+    }
+
+    exteriorise = {"Skog"}
+
+
+class Config50(BaseConfig):
+    """Config class."""
+
+    ground: dict[str, str] = {
         "Anlagt vatten": "01_anlagt_vatten.geojson",
         "Vattendragsyta": "02_vattendragsyta.geojson",
         "Sjö": "03_sjo.geojson",
@@ -32,17 +59,6 @@ class Config:
         "Hav": "16_hav.geojson",
         "Ej karterat område": "17_ej_kartlagt.geojson",
     }
-    ground_1m: dict[str, str] = {
-        "Vattenyta": "01_vattenyta.geojson",
-        "Glaciär": "05_glaciar.geojson",
-        "Kalfjäll": "08_kalfjall.geojson",
-        "Skog": "02_skog.geojson",
-        "Öppen mark": "15_oppen_mark.geojson",
-        "Bebyggelse": "06_bebygelse.geojson",
-        "Hav": "16_hav.geojson",
-        "Ej karterat område": "17_ej_kartlagt.geojson",
-    }
-
     exclude_ground = {"Hav", "Ej karterat område"}
 
     ground_water = {
@@ -50,10 +66,10 @@ class Config:
         "Sjö",
         "Vattendragsyta",
         "Hav",
-        "Vattenyta",
     }
 
-    exteriorise = {"Barr- och blandskog", "Skog"}
+    exteriorise = {"Barr- och blandskog"}
 
 
-config = Config()
+config_1m = Config1M()
+config_50 = Config50()
