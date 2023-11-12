@@ -38,6 +38,7 @@ class Config1M(BaseConfig):
         "Hav": "16_hav.geojson",
         "Ej karterat område": "17_ej_kartlagt.geojson",
     }
+    building: dict[str, str] = {}
     exclude = {"Hav", "Ej karterat område"}
 
     ground_water = {
