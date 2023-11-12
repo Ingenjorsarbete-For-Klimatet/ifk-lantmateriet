@@ -34,26 +34,24 @@ class Ground(Geometry):
             )
 
     def process(
-        self, item_type, set_area: bool = True, set_length: bool = True
+        self, set_area: bool = True, set_length: bool = True
     ) -> dict[str, gpd.GeoDataFrame]:
         """Process all data items.
 
         Args:
-            item_type: item type
             set_area: set area column
             set_length: set length column
 
         Returns:
             map of ground items including
         """
-        return self._process(item_type, set_area, set_length)
+        return self._process("ground", set_area, set_length)
 
-    def save(self, item_type, all_items: dict[str, gpd.GeoDataFrame], save_path: str):
+    def save(self, all_items: dict[str, gpd.GeoDataFrame], save_path: str):
         """Save processed ground items in EPSG:4326 as GeoJSON.
 
         Args:
-            item_type: item type
             all_items: GeoDataFrame items to save
             save_path: path to save files in
         """
-        self._save(item_type, all_items, save_path)
+        self._save("ground", all_items, save_path)

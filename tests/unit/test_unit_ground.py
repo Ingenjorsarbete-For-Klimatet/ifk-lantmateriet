@@ -84,7 +84,7 @@ class TestUnitGround:
             mock_ground_process: mock of Ground _process
         """
         ground = Ground("path")
-        ground.process("ground")
+        ground.process()
         mock_ground_process.assert_called_once_with("ground", True, True)
 
     @patch("lantmateriet.ground.Ground._save")
@@ -97,5 +97,5 @@ class TestUnitGround:
             mock_ground_save: mock of Ground _save
         """
         ground = Ground("path")
-        ground.save("ground", {}, "path")
+        ground.save({}, "path")
         mock_ground_save.assert_called_once_with("ground", {}, "path")
