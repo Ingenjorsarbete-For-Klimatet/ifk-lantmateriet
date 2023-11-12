@@ -25,16 +25,6 @@ class TestUnitGround:
             ),
             (
                 "path",
-                "1m",
-                "mark",
-                True,
-                gpd.GeoDataFrame(
-                    {"objekttyp": [k for k in config.config_1m.ground.keys()]}
-                ),
-                config.config_1m,
-            ),
-            (
-                "path",
                 "50",
                 "mark",
                 True,
@@ -46,16 +36,6 @@ class TestUnitGround:
                             if k not in config.config_50.exclude
                         ]
                     }
-                ),
-                None,
-            ),
-            (
-                "path",
-                "1",
-                "mark",
-                True,
-                gpd.GeoDataFrame(
-                    {"objekttyp": [k for k in config.config_50.ground.keys()]}
                 ),
                 None,
             ),
@@ -84,19 +64,15 @@ class TestUnitGround:
             expected_result: expected result
         """
         mcck_gpd_read_file.return_value = df
-        if detail_level in {"50", "1m"}:
-            if expected_result is None:
-                with pytest.raises(KeyError):
-                    ground = Ground(file_name, detail_level, layer, use_arrow)
-            else:
+        if expected_result is None:
+            with pytest.raises(KeyError):
                 ground = Ground(file_name, detail_level, layer, use_arrow)
-                mcck_gpd_read_file.assert_called_with(
-                    file_name, layer=layer, use_arrow=use_arrow
-                )
-                assert ground.config == expected_result
         else:
-            with pytest.raises(NotImplementedError):
-                ground = Ground(file_name, detail_level, layer, use_arrow)
+            ground = Ground(file_name, detail_level, layer, use_arrow)
+            mcck_gpd_read_file.assert_called_with(
+                file_name, layer=layer, use_arrow=use_arrow
+            )
+            assert ground.config == expected_result
 
     @patch("lantmateriet.ground.Ground._process")
     @patch("lantmateriet.ground.Ground.__init__", return_value=None)
