@@ -22,7 +22,7 @@ class TestIntegrationGround:
     """Integration test of Ground."""
 
     def test_integration_get_ground_items(self):
-        """Integration test of Ground get_ground."""
+        """Integration test of Ground processd."""
         ground = Ground(
             "tests/fixtures/test_integration_ground_mark.gpkg", "50", "mark", True
         )
