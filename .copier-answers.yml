@@ -7,3 +7,4 @@ module_name: lantmateriet
 package_name: geometry
 project_description: Parse data from Lantmäteriet.
 project_name: ifk-lantmateriet
+badge_gistid: e2326bc24f74f346a118a97b09e852ec
