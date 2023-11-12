@@ -76,11 +76,11 @@ class TestUnitGround:
 
     @patch("lantmateriet.ground.Ground._process")
     @patch("lantmateriet.ground.Ground.__init__", return_value=None)
-    def test_unit_ground_process(self, mock_geometry_init, mock_ground_process):
+    def test_unit_ground_process(self, mock_ground_init, mock_ground_process):
         """Unit test of Ground process method.
 
         Args:
-            mock_geometry_init: mock of Geometry __init__
+            mock_ground_init: mock of Geometry __init__
             mock_ground_process: mock of Ground _process
         """
         ground = Ground("path")
@@ -89,11 +89,11 @@ class TestUnitGround:
 
     @patch("lantmateriet.ground.Ground._save")
     @patch("lantmateriet.ground.Ground.__init__", return_value=None)
-    def test_unit_ground_save(self, mock_geometry_init, mock_ground_save):
+    def test_unit_ground_save(self, mock_ground_init, mock_ground_save):
         """Unit test of Ground save method.
 
         Args:
-            mock_geometry_init: mock of Geometry __init__
+            mock_ground_init: mock of Geometry __init__
             mock_ground_save: mock of Ground _save
         """
         ground = Ground("path")
