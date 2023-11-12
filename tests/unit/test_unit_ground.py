@@ -1,5 +1,4 @@
 """Ground unit tests."""
-from copy import deepcopy
 from unittest.mock import call, patch
 
 import geopandas as gpd
@@ -7,7 +6,6 @@ import pytest
 from geopandas import testing
 from lantmateriet import config
 from lantmateriet.ground import Ground
-from lantmateriet.utils import smap
 from shapely.geometry import Polygon
 
 
@@ -47,7 +45,7 @@ class TestUnitGround:
                         "objekttyp": [
                             k
                             for k in config.config_50.ground.keys()
-                            if k not in config.config_50.exclude_ground
+                            if k not in config.config_50.exclude
                         ]
                     }
                 ),
@@ -103,105 +101,6 @@ class TestUnitGround:
                 ground = Ground(file_name, detail_level, layer, use_arrow)
 
     @pytest.mark.parametrize(
-        "df, config_ground, expected_result",
-        [
-            (
-                gpd.GeoDataFrame({"objekttyp": ["Hav", "Sjö"]}),
-                {"Hav": "hav", "Sjö": "sjö"},
-                [("Sjö", gpd.GeoDataFrame({"objekttyp": ["Sjö"]}, index=[1]))],
-            )
-        ],
-    )
-    @patch("lantmateriet.ground.Ground.__init__", return_value=None)
-    def test_unit_get_ground_items(
-        self, mock_ground_init, df, config_ground, expected_result
-    ):
-        """Unit test of Ground _get_ground_items method.
-
-        Args:
-            mock_ground_init: mock of Ground init
-            df: test dataframe
-            config_ground: test config ground
-            expected_result: expected result
-        """
-        test_config = deepcopy(config.config_50)
-        test_config.ground = config_ground
-        ground = Ground("path")
-        ground.df = df
-        ground.config = test_config
-
-        ground_items = ground._get_ground_items()
-
-        assert all([x[0] == y[0] for x, y in zip(ground_items, expected_result)])
-        for (_, x), (_, y) in zip(ground_items, expected_result):
-            assert all(x.objekttyp == y.objekttyp)
-
-    @pytest.mark.parametrize(
-        "config_ground, expected_result",
-        [
-            (
-                {"Barr- och blandskog": "skog", "Sjö": "sjö"},
-                [
-                    (Ground._dissolve, "Sjö", 1),
-                    (Ground._dissolve_exterior, "Barr- och blandskog", 2),
-                ],
-            )
-        ],
-    )
-    @patch(
-        "lantmateriet.ground.Ground._get_ground_items",
-        return_value=[("Sjö", 1), ("Barr- och blandskog", 2)],
-    )
-    @patch("lantmateriet.ground.Ground.__init__", return_value=None)
-    def test_unit_prepare_parallel_list(
-        self, mock_ground_init, mock_get_ground_items, config_ground, expected_result
-    ):
-        """Unit test of Ground _prepare_parallel_list method.
-
-        Args:
-            mock_ground_init: mock of Ground init
-            mock_get_ground_items: mock of Ground _get_ground_items
-            config_ground: test config ground
-            expected_result: expected result
-        """
-        test_config = deepcopy(config.config_50)
-        test_config.ground = config_ground
-        ground = Ground("path")
-        ground.config = test_config
-
-        ground_items = ground._prepare_parallel_list()
-
-        for x, y in zip(ground_items, expected_result):
-            assert x[0] == y[0]
-            assert x[1] == y[1]
-            assert x[2] == y[2]
-
-    @patch("lantmateriet.ground.Pool")
-    @patch("lantmateriet.ground.Ground._prepare_parallel_list")
-    @patch("lantmateriet.ground.Ground.__init__", return_value=None)
-    def test_unit_execute_disolve_parallel(
-        self, mock_ground_init, mock_prepare_list, mock_pool
-    ):
-        """Unit test of Ground _execute_dissolve_parallel method.
-
-        Args:
-            mock_ground_init: mock of Ground init
-            mock_prepare_list: mock of Ground _prepare_parallel_list
-            mock_pool: mock of Pool
-        """
-        ground = Ground("path")
-        dissolved_geometry = ground._execute_dissolve_parallel()
-        mock_prepare_list.assert_called_once()
-        mock_pool.return_value.__enter__.return_value.starmap.assert_called_once_with(
-            smap, mock_prepare_list.return_value
-        )
-
-        assert (
-            dissolved_geometry
-            == mock_pool.return_value.__enter__.return_value.starmap.return_value
-        )
-
-    @pytest.mark.parametrize(
         "set_area, set_length, key, dissolved_geometry",
         [
             (
@@ -250,12 +149,14 @@ class TestUnitGround:
             ),
         ],
     )
+    @patch("lantmateriet.ground.Ground._get_items")
     @patch("lantmateriet.ground.Ground._execute_dissolve_parallel")
     @patch("lantmateriet.ground.Ground.__init__", return_value=None)
     def test_unit_get_ground(
         self,
         mock_ground_init,
         mock_execute_dissolve_parallel,
+        mock_get_items,
         set_area,
         set_length,
         key,
@@ -266,6 +167,7 @@ class TestUnitGround:
         Args:
             mock_ground_init: mock of Ground init
             mock_execute_dissolve_parallel: mock of Ground _execute_dissolve_parallel
+            mock_get_items: mock of Ground _get_items
             set_area: set area flag
             set_length: set length flag
             key: key
@@ -276,6 +178,7 @@ class TestUnitGround:
 
         result = ground.get_ground(set_area, set_length)
 
+        mock_get_items.assert_called_once_with("ground")
         assert set(result.keys()) == set([x[0] for x in dissolved_geometry])
         testing.assert_geodataframe_equal(result[key], dissolved_geometry[0][1])
 
@@ -311,7 +214,7 @@ class TestUnitGround:
                 crs=config.config_50.espg_3006,
             )
             for k in config.config_50.ground.keys()
-            if k not in config.config_50.exclude_ground
+            if k not in config.config_50.exclude
         }
 
         ground.save_ground(all_ground, "path_to_save")
@@ -323,7 +226,7 @@ class TestUnitGround:
                     driver="GeoJSON",
                 )
                 for k, file_name in config.config_50.ground.items()
-                if k not in config.config_50.exclude_ground
+                if k not in config.config_50.exclude
             ],
             any_order=True,
         )
