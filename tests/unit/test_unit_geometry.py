@@ -1,6 +1,6 @@
 """Geometry unit tests."""
 from copy import deepcopy
-from unittest.mock import patch
+from unittest.mock import call, patch
 
 import geopandas as gpd
 import pytest
@@ -823,4 +823,142 @@ class TestUnitGeometry:
         assert (
             dissolved_geometry
             == mock_pool.return_value.__enter__.return_value.starmap.return_value
+        )
+
+    @pytest.mark.parametrize(
+        "item_type, set_area, set_length, key, dissolved_geometry",
+        [
+            (
+                "ground",
+                False,
+                False,
+                "Sjö",
+                [
+                    (
+                        "Sjö",
+                        gpd.GeoDataFrame(geometry=[Polygon([(0, 0), (1, 1), (1, 0)])]),
+                    )
+                ],
+            ),
+            (
+                "ground",
+                True,
+                False,
+                "Sjö",
+                [
+                    (
+                        "Sjö",
+                        gpd.GeoDataFrame(geometry=[Polygon([(0, 0), (1, 1), (1, 0)])]),
+                    )
+                ],
+            ),
+            (
+                "ground",
+                False,
+                True,
+                "Sjö",
+                [
+                    (
+                        "Sjö",
+                        gpd.GeoDataFrame(geometry=[Polygon([(0, 0), (1, 1), (1, 0)])]),
+                    )
+                ],
+            ),
+            (
+                "ground",
+                True,
+                True,
+                "Sjö",
+                [
+                    (
+                        "Sjö",
+                        gpd.GeoDataFrame(geometry=[Polygon([(0, 0), (1, 1), (1, 0)])]),
+                    )
+                ],
+            ),
+        ],
+    )
+    @patch("lantmateriet.geometry.Geometry._get_items")
+    @patch("lantmateriet.geometry.Geometry._execute_dissolve_parallel")
+    @patch("lantmateriet.geometry.Geometry.__init__", return_value=None)
+    def test_unit_process(
+        self,
+        mock_geometry_init,
+        mock_execute_dissolve_parallel,
+        mock_get_items,
+        item_type,
+        set_area,
+        set_length,
+        key,
+        dissolved_geometry,
+    ):
+        """Unit test of Geometry _process method.
+
+        Args:
+            mock_geometry_init: mock of Geometry init
+            mock_execute_dissolve_parallel: mock of Geometry _execute_dissolve_parallel
+            mock_get_items: mock of Geometry _get_items
+            item_type: item type
+            set_area: set area flag
+            set_length: set length flag
+            key: key
+            dissolved_geometry: dissolved geometry
+        """
+        mock_execute_dissolve_parallel.return_value = dissolved_geometry
+        geometry = Geometry("path")
+
+        result = geometry._process(item_type, set_area, set_length)
+
+        mock_get_items.assert_called_once_with(item_type)
+        assert set(result.keys()) == set([x[0] for x in dissolved_geometry])
+        testing.assert_geodataframe_equal(result[key], dissolved_geometry[0][1])
+
+        if set_area is True:
+            assert "area_m2" in result[key]
+
+        if set_area is False:
+            assert "area_m2" not in result[key]
+
+        if set_length is True:
+            assert "length_m" in result[key]
+
+        if set_length is False:
+            assert "length_m" not in result[key]
+
+    @patch.object(gpd.GeoDataFrame, "to_file")
+    @patch("lantmateriet.geometry.Geometry.__init__", return_value=None)
+    def test_unit_save(self, mock_geometry_init, mock_to_file):
+        """Unit test of Geometry _save method.
+
+        Args:
+            mock_geometry_init: mock of Geometry init
+            mock_to_file: mock of GeoDataFrame to_file
+        """
+        geometry = Geometry("path")
+        geometry.df = gpd.GeoDataFrame({"objekttyp": ["objekttyp"]})
+        geometry.config = config.config_50
+
+        item_type = "ground"
+        all_geometry = {
+            k: gpd.GeoDataFrame(
+                {"objekttyp": ["objekttyp"]},
+                geometry=[Polygon([(0, 0), (1, 1), (1, 0)])],
+                crs=config.config_50.espg_3006,
+            )
+            for k in config.config_50[item_type].keys()
+            if k not in config.config_50.exclude
+        }
+
+        geometry._save(item_type, all_geometry, "path_to_save")
+
+        mock_to_file.assert_has_calls(
+            [
+                call(
+                    f"path_to_save/{file_name}",
+                    driver="GeoJSON",
+                )
+                for k, file_name in config.config_50.ground.items()
+                if k not in config.config_50.exclude
+            ],
+            any_order=True,
         )

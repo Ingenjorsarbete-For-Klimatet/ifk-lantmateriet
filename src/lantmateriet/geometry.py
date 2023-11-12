@@ -1,6 +1,7 @@
 """Geometry module."""
 from copy import deepcopy
 from multiprocessing import Pool
+from os import path
 from typing import Union
 
 import geopandas as gpd
@@ -363,3 +364,44 @@ class Geometry:
             ground_dissolved = pool.starmap(smap, ground)
 
         return ground_dissolved
+
+    def _process(
+        self, item_type, set_area: bool = True, set_length: bool = True
+    ) -> dict[str, gpd.GeoDataFrame]:
+        """Process all data items.
+
+        Args:
+            item_type: item type
+            set_area: set area column
+            set_length: set length column
+
+        Returns:
+            map of ground items including
+        """
+        ground_items = self._get_items(item_type)
+        ground_dissolved = self._execute_dissolve_parallel(ground_items)
+
+        if set_area is True:
+            ground_dissolved = [(k, Geometry._set_area(v)) for k, v in ground_dissolved]
+
+        if set_length is True:
+            ground_dissolved = [
+                (k, Geometry._set_length(v)) for k, v in ground_dissolved
+            ]
+
+        return {
+            object_name: ground_items for object_name, ground_items in ground_dissolved
+        }
+
+    def _save(self, item_type, all_items: dict[str, gpd.GeoDataFrame], save_path: str):
+        """Save processed ground items in EPSG:4326 as GeoJSON.
+
+        Args:
+            item_type: item type
+            all_items: GeoDataFrame items to save
+            save_path: path to save files in
+        """
+        for object_name, item in all_items.items():
+            file_name = self.config[item_type][object_name]
+            item = item.to_crs(self.config.epsg_4326)
+            item.to_file(path.join(save_path, file_name), driver="GeoJSON")

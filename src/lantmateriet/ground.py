@@ -1,6 +1,4 @@
 """Ground module."""
-from os import path
-
 import geopandas as gpd
 from lantmateriet.geometry import Geometry
 
@@ -35,43 +33,27 @@ class Ground(Geometry):
                 "Data objekttyp not equal to ground dict. Has the input data changed?"
             )
 
-    def get_ground(
-        self, set_area: bool = True, set_length: bool = True
+    def process(
+        self, item_type, set_area: bool = True, set_length: bool = True
     ) -> dict[str, gpd.GeoDataFrame]:
-        """Get all ground items.
+        """Process all data items.
 
         Args:
+            item_type: item type
             set_area: set area column
             set_length: set length column
 
         Returns:
             map of ground items including
         """
-        ground_items = self._get_items("ground")
-        ground_dissolved = self._execute_dissolve_parallel(ground_items)
+        return self._process(item_type, set_area, set_length)
 
-        if set_area is True:
-            ground_dissolved = [(k, Geometry._set_area(v)) for k, v in ground_dissolved]
-
-        if set_length is True:
-            ground_dissolved = [
-                (k, Geometry._set_length(v)) for k, v in ground_dissolved
-            ]
-
-        return {
-            object_name: ground_items for object_name, ground_items in ground_dissolved
-        }
-
-    def save_ground(
-        self, all_ground_items: dict[str, gpd.GeoDataFrame], save_path: str
-    ):
+    def save(self, item_type, all_items: dict[str, gpd.GeoDataFrame], save_path: str):
         """Save processed ground items in EPSG:4326 as GeoJSON.
 
         Args:
-            all_ground_items: GeoDataFrame items to save
+            item_type: item type
+            all_items: GeoDataFrame items to save
             save_path: path to save files in
         """
-        for object_name, ground_item in all_ground_items.items():
-            file_name = self.config.ground[object_name]
-            ground_item = ground_item.to_crs(self.config.epsg_4326)
-            ground_item.to_file(path.join(save_path, file_name), driver="GeoJSON")
+        self._save(item_type, all_items, save_path)
