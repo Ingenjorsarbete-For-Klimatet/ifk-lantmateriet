@@ -5,6 +5,7 @@ import geopandas as gpd
 import pytest
 from lantmateriet import config
 from lantmateriet.ground import Ground
+from shapely.geometry import Point
 
 
 class TestUnitGround:
@@ -74,7 +75,14 @@ class TestUnitGround:
             )
             assert ground.config == expected_result
 
-    @patch("lantmateriet.ground.Ground._process")
+    @patch(
+        "lantmateriet.ground.Ground._process",
+        return_value={
+            "Sverige": gpd.GeoDataFrame(
+                {"geometry": [Point(0, 0), Point(0, 1)], "objekttyp": "Sverige"}
+            )
+        },
+    )
     @patch("lantmateriet.ground.Ground.__init__", return_value=None)
     def test_unit_ground_process(self, mock_ground_init, mock_ground_process):
         """Unit test of Ground process method.
@@ -87,6 +95,7 @@ class TestUnitGround:
         ground.item_type = "ground"
         ground.layer = "mark"
         ground.dissolve = True
+        ground.config = config.config_50
 
         ground.process()
         mock_ground_process.assert_called_once_with("ground", "mark", True, True, True)

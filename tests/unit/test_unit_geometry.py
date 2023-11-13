@@ -497,7 +497,14 @@ class TestUnitDissolveTouchingGeometry:
     @pytest.mark.parametrize(
         "df, expected_result",
         [
-            (gpd.GeoDataFrame({"geometry": []}), gpd.GeoDataFrame({"geometry": []})),
+            (
+                gpd.GeoDataFrame(
+                    {"geometry": [], "objekttyp": []}, crs=config.config_50.espg_3006
+                ),
+                gpd.GeoDataFrame(
+                    {"geometry": [], "objekttyp": []}, crs=config.config_50.espg_3006
+                ),
+            ),
             (
                 gpd.GeoDataFrame(
                     {
@@ -514,17 +521,21 @@ class TestUnitDissolveTouchingGeometry:
                                     ][::-1]
                                 ],
                             ),
-                        ]
+                        ],
+                        "objekttyp": ["Sjö"],
                     },
                     index=[1],
+                    crs=config.config_50.espg_3006,
                 ),
                 gpd.GeoDataFrame(
                     {
                         "geometry": Polygon(
                             [(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)],
                         ),
+                        "objekttyp": ["Sjö"],
                     },
                     index=[0],
+                    crs=config.config_50.espg_3006,
                 ),
             ),
             (
@@ -548,9 +559,11 @@ class TestUnitDissolveTouchingGeometry:
                             Polygon(
                                 [(0, 3), (1, 3), (1, 4), (0, 4), (0, 3)],
                             ),
-                        ]
+                        ],
+                        "objekttyp": ["Sjö"],
                     },
                     index=[1, 2],
+                    crs=config.config_50.espg_3006,
                 ),
                 gpd.GeoDataFrame(
                     {
@@ -561,9 +574,11 @@ class TestUnitDissolveTouchingGeometry:
                             Polygon(
                                 [(0, 3), (1, 3), (1, 4), (0, 4), (0, 3)],
                             ),
-                        ]
+                        ],
+                        "objekttyp": ["Sjö"],
                     },
                     index=[0, 1],
+                    crs=config.config_50.espg_3006,
                 ),
             ),
         ],

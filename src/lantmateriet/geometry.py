@@ -201,7 +201,13 @@ class DissolveTouchingGeometry:
         dissolved_geometry = exterior_geometry.dissolve()
         exploded_geometry = dissolved_geometry.explode(ignore_index=True)
         return gpd.GeoDataFrame(
-            {"geometry": [x for x in polygonize(exploded_geometry.geometry)]}
+            {
+                "geometry": [x for x in polygonize(exploded_geometry.geometry)],
+                "objekttyp": []
+                if len(set(self.df["objekttyp"])) < 1
+                else self.df["objekttyp"].iloc[0],
+            },
+            crs=self.df.crs,
         )
 
 
@@ -400,5 +406,6 @@ class Geometry:
         """
         for object_name, item in all_items.items():
             file_name = self.config[item_type][layer][object_name]
+            print(file_name)
             item = item.to_crs(self.config.epsg_4326)
             item.to_file(path.join(save_path, file_name), driver="GeoJSON")

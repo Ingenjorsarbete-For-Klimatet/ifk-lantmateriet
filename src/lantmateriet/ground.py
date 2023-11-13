@@ -1,5 +1,6 @@
 """Ground module."""
 import geopandas as gpd
+import pandas as pd
 from lantmateriet.geometry import Geometry
 
 
@@ -30,7 +31,9 @@ class Ground(Geometry):
         self.item_type = "ground"
         self.dissolve = True
 
-        if set(self.df["objekttyp"]) != set(self.config.ground[layer].keys()):
+        if set(self.df["objekttyp"]) | self.config.exclude != (
+            set(self.config.ground[layer].keys()) | self.config.exclude
+        ):
             raise KeyError(
                 "Data objekttyp not equal to ground dict. Has the input data changed?"
             )
@@ -47,9 +50,20 @@ class Ground(Geometry):
         Returns:
             map of ground items including
         """
-        return self._process(
+        df_processed = self._process(
             self.item_type, self.layer, self.dissolve, set_area, set_length
         )
+        df_processed["Sverige"] = pd.concat(
+            [
+                v[~v["objekttyp"].isin(self.config.ground_water)]
+                for _, v in df_processed.items()
+            ]
+        ).dissolve()
+        df_processed["Sverige"] = self._set_area(df_processed["Sverige"])
+        df_processed["Sverige"] = self._set_length(df_processed["Sverige"])
+        df_processed["Sverige"]["objekttyp"] = "Sverige"
+
+        return df_processed
 
     def save(self, all_items: dict[str, gpd.GeoDataFrame], save_path: str):
         """Save processed ground items in EPSG:4326 as GeoJSON.

@@ -36,6 +36,7 @@ class Config1M(BaseConfig):
 
     ground: dict[str, dict[str, str]] = {
         "mark": {
+            "Sverige": "00_sverige.geojson",
             "Vattenyta": "01_vattenyta.geojson",
             "Glaciär": "05_glaciar.geojson",
             "Kalfjäll": "08_kalfjall.geojson",
@@ -62,7 +63,7 @@ class Config1M(BaseConfig):
         "ralstrafik": {"Järnväg": "01_jarnvag.geojson"},
     }
 
-    exclude = {"Hav", "Ej karterat område"}
+    exclude = {"Hav", "Ej karterat område", "Sverige"}
     exteriorise = {"Skog"}
     ground_water = {
         "Hav",
@@ -73,8 +74,10 @@ class Config1M(BaseConfig):
 class Config50(BaseConfig):
     """Config class."""
 
+    total_ground = ("00_sverige.geojson", "00_sverige.geojson")
     ground: dict[str, dict[str, str]] = {
         "mark": {
+            "Sverige": "00_sverige.geojson",
             "Anlagt vatten": "01_anlagt_vatten.geojson",
             "Vattendragsyta": "02_vattendragsyta.geojson",
             "Sjö": "03_sjo.geojson",
@@ -155,7 +158,7 @@ class Config50(BaseConfig):
         "ralstrafikstation": {},
     }
 
-    exclude = {"Hav", "Ej karterat område"}
+    exclude = {"Hav", "Ej karterat område", "Sverige"}
     exteriorise = {"Barr- och blandskog"}
     ground_water = {
         "Anlagt vatten",
