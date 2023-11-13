@@ -30,7 +30,7 @@ class Communication(Geometry):
         self.layer = layer
         self.item_type = "communication"
 
-        if set(self.df["objekttyp"]) != set(self.config.communication.keys()):
+        if set(self.df["objekttyp"]) != set(self.config.communication[layer].keys()):
             raise KeyError(
                 "Data objekttyp not equal to communication dict. Has the input data changed?"
             )
