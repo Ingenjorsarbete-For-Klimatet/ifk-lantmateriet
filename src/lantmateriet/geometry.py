@@ -315,18 +315,21 @@ class Geometry:
         df_dissolved = DissolveTouchingGeometry(df).dissolve_and_explode_exterior()
         return (object_name, df_dissolved)
 
-    def _get_items(self, item_type: str) -> list[tuple[str, gpd.GeoDataFrame]]:
+    def _get_items(
+        self, item_type: str, layer: str
+    ) -> list[tuple[str, gpd.GeoDataFrame]]:
         """Get ground items.
 
         Args:
             item_type: type of config item
+            layer: str
 
         Returns:
             list of file names and corresponding geodata
         """
         return [
             (object_name, self.df[self.df["objekttyp"] == object_name])
-            for object_name, _ in self.config[item_type].items()
+            for object_name, _ in self.config[item_type][layer].items()
             if object_name not in self.config.exclude
         ]
 
@@ -366,19 +369,20 @@ class Geometry:
         return ground_dissolved
 
     def _process(
-        self, item_type, set_area: bool = True, set_length: bool = True
+        self, item_type: str, layer: str, set_area: bool = True, set_length: bool = True
     ) -> dict[str, gpd.GeoDataFrame]:
         """Process all data items.
 
         Args:
             item_type: item type
+            layer: layer
             set_area: set area column
             set_length: set length column
 
         Returns:
             map of ground items including
         """
-        ground_items = self._get_items(item_type)
+        ground_items = self._get_items(item_type, layer)
         ground_dissolved = self._execute_dissolve_parallel(ground_items)
 
         if set_area is True:
@@ -393,15 +397,22 @@ class Geometry:
             object_name: ground_items for object_name, ground_items in ground_dissolved
         }
 
-    def _save(self, item_type, all_items: dict[str, gpd.GeoDataFrame], save_path: str):
+    def _save(
+        self,
+        item_type: str,
+        layer: str,
+        all_items: dict[str, gpd.GeoDataFrame],
+        save_path: str,
+    ):
         """Save processed ground items in EPSG:4326 as GeoJSON.
 
         Args:
             item_type: item type
+            layer: layer
             all_items: GeoDataFrame items to save
             save_path: path to save files in
         """
         for object_name, item in all_items.items():
-            file_name = self.config[item_type][object_name]
+            file_name = self.config[item_type][layer][object_name]
             item = item.to_crs(self.config.epsg_4326)
             item.to_file(path.join(save_path, file_name), driver="GeoJSON")
