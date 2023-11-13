@@ -28,7 +28,7 @@ class Building(Geometry):
         """
         super().__init__(file_path, detail_level, layer, use_arrow)
         self.layer = layer
-        self.item_type = "building"
+        self.item_type = "construction"
 
         if set(self.df["objekttyp"]) != set(self.config.building.keys()):
             raise KeyError(
