@@ -1,4 +1,5 @@
 """Geometry module."""
+import time
 from copy import deepcopy
 from multiprocessing import Pool
 from os import path
@@ -86,34 +87,6 @@ class DissolveTouchingGeometry:
 
         return connected_touching_geometries
 
-    # @staticmethod
-    # def _find_connected_geometries(
-    #     touching_geometries: dict, subset_touching_geometries: set
-    # ) -> set:
-    #     """Recursive function finding connected geometries.
-
-    #     Args:
-    #         touching_geometries: map of all touching geometries
-    #         subset_touching_geometries: list of geometries touching
-
-    #     Returns:
-    #         list of all connected geometries
-    #     """
-    #     connected_touching_geometries = subset_touching_geometries.copy()
-
-    #     for index in subset_touching_geometries:
-    #         if index in touching_geometries:
-    #             connected_touching_geometries.update(touching_geometries[index])
-
-    #     if connected_touching_geometries - subset_touching_geometries:
-    #         connected_touching_geometries.update(
-    #             DissolveTouchingGeometry._find_connected_geometries(
-    #                 touching_geometries, connected_touching_geometries
-    #             )
-    #         )
-
-    #     return connected_touching_geometries
-
     @staticmethod
     def _remove_duplicate_geometries(touching_geometries: dict) -> dict:
         """Remove duplicate geometries.
@@ -150,19 +123,34 @@ class DissolveTouchingGeometry:
         Returns:
             indices of unique connected touching geometries
         """
+        t0 = time.perf_counter()
         spatial_index = self._get_spatial_index()
         input_geometry_index, touching_geometry_index = spatial_index.nearest(
             self.df["geometry"], exclusive=True, max_distance=TOUCHING_MAX_DIST
         )
+        t1 = time.perf_counter()
+        print(t1 - t0)
 
         disconnected_touching_geometries = self._format_touching_geometries(
             input_geometry_index, touching_geometry_index
         )
+
+        t2 = time.perf_counter()
+        print(t2 - t1)
+
+        # return disconnected_touching_geometries
+
         connected_touching_geometries = self._connect_touching_geometries(
             disconnected_touching_geometries
         )
+        t3 = time.perf_counter()
+        print(t3 - t2)
 
-        return self._remove_duplicate_geometries(connected_touching_geometries)
+        tmp = self._remove_duplicate_geometries(connected_touching_geometries)
+        t4 = time.perf_counter()
+        print(t4 - t3)
+
+        return tmp
 
     def _get_df_indices(self, touching_geometries: dict) -> tuple[list, list]:
         """Get df index to keep and drop.
@@ -318,7 +306,7 @@ class Geometry:
     def _get_items(
         self, item_type: str, layer: str
     ) -> list[tuple[str, gpd.GeoDataFrame]]:
-        """Get ground items.
+        """Get items.
 
         Args:
             item_type: type of config item
@@ -333,7 +321,9 @@ class Geometry:
             if object_name not in self.config.exclude
         ]
 
-    def _prepare_parallel_list(self, geometry_items: list) -> list[tuple]:
+    def _prepare_parallel_list(
+        self, geometry_items: list[tuple[str, gpd.GeoDataFrame]]
+    ) -> list[tuple]:
         """Prepare list for parallel processing.
 
         Args:
@@ -348,13 +338,13 @@ class Geometry:
                 if object_name in self.config.exteriorise
                 else Geometry._dissolve,
                 object_name,
-                ground_item,
+                geometry_item,
             )
-            for object_name, ground_item in geometry_items
+            for object_name, geometry_item in geometry_items
         ]
 
-    def _execute_dissolve_parallel(self, geometry_items: list) -> list:
-        """Execute parallel processing of dissolve.
+    def _dissolve_parallel(self, geometry_items: list) -> list:
+        """Parallel processing of dissolve.
 
         Args:
             geometry_items: list of data items
@@ -362,39 +352,46 @@ class Geometry:
         Returns:
             dissolved data
         """
-        ground = self._prepare_parallel_list(geometry_items)
+        geometry = self._prepare_parallel_list(geometry_items)
         with Pool(WORKERS) as pool:
-            ground_dissolved = pool.starmap(smap, ground)
+            geometry_dissolved = pool.starmap(smap, geometry)
 
-        return ground_dissolved
+        return geometry_dissolved
 
     def _process(
-        self, item_type: str, layer: str, set_area: bool = True, set_length: bool = True
+        self,
+        item_type: str,
+        layer: str,
+        dissolve: bool = False,
+        set_area: bool = True,
+        set_length: bool = True,
     ) -> dict[str, gpd.GeoDataFrame]:
         """Process all data items.
 
         Args:
             item_type: item type
             layer: layer
+            dissolve: dissolve touching geometries
             set_area: set area column
             set_length: set length column
 
         Returns:
-            map of ground items including
+            map of geometry items including
         """
-        ground_items = self._get_items(item_type, layer)
-        ground_dissolved = self._execute_dissolve_parallel(ground_items)
+        geometry_items = self._get_items(item_type, layer)
+
+        if dissolve is True:
+            geometry_items = self._dissolve_parallel(geometry_items)
 
         if set_area is True:
-            ground_dissolved = [(k, Geometry._set_area(v)) for k, v in ground_dissolved]
+            geometry_items = [(k, Geometry._set_area(v)) for k, v in geometry_items]
 
         if set_length is True:
-            ground_dissolved = [
-                (k, Geometry._set_length(v)) for k, v in ground_dissolved
-            ]
+            geometry_items = [(k, Geometry._set_length(v)) for k, v in geometry_items]
 
         return {
-            object_name: ground_items for object_name, ground_items in ground_dissolved
+            object_name: geometry_items
+            for object_name, geometry_items in geometry_items
         }
 
     def _save(
@@ -404,7 +401,7 @@ class Geometry:
         all_items: dict[str, gpd.GeoDataFrame],
         save_path: str,
     ):
-        """Save processed ground items in EPSG:4326 as GeoJSON.
+        """Save processed geometry items in EPSG:4326 as GeoJSON.
 
         Args:
             item_type: item type

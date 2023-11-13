@@ -98,12 +98,8 @@ class TestUnitDissolveTouchingGeometry:
                 {
                     0: {0, 1},
                     1: {1, 2},
-                    2: {
-                        2,
-                    },
-                    3: {
-                        3,
-                    },
+                    2: {2},
+                    3: {3},
                     4: {4, 0},
                 },
                 {
@@ -804,10 +800,10 @@ class TestUnitGeometry:
     @patch("lantmateriet.geometry.Pool")
     @patch("lantmateriet.geometry.Geometry._prepare_parallel_list")
     @patch("lantmateriet.ground.Geometry.__init__", return_value=None)
-    def test_unit_execute_disolve_parallel(
+    def test_unit_disolve_parallel(
         self, mock_geometry_init, mock_prepare_list, mock_pool
     ):
-        """Unit test of Geometry _execute_dissolve_parallel method.
+        """Unit test of Geometry _dissolve_parallel method.
 
         Args:
             mock_geometry_init: mock of Geometry init
@@ -816,7 +812,7 @@ class TestUnitGeometry:
         """
         input_list = []
         geometry = Geometry("path")
-        dissolved_geometry = geometry._execute_dissolve_parallel(input_list)
+        dissolved_geometry = geometry._dissolve_parallel(input_list)
         mock_prepare_list.assert_called_once_with(input_list)
         mock_pool.return_value.__enter__.return_value.starmap.assert_called_once_with(
             smap, mock_prepare_list.return_value
@@ -828,11 +824,12 @@ class TestUnitGeometry:
         )
 
     @pytest.mark.parametrize(
-        "item_type, layer, set_area, set_length, key, dissolved_geometry",
+        "item_type, layer, dissolve, set_area, set_length, key, dissolved_geometry",
         [
             (
                 "ground",
                 "mark",
+                True,
                 False,
                 False,
                 "Sjö",
@@ -847,6 +844,7 @@ class TestUnitGeometry:
                 "ground",
                 "mark",
                 True,
+                True,
                 False,
                 "Sjö",
                 [
@@ -859,6 +857,7 @@ class TestUnitGeometry:
             (
                 "ground",
                 "mark",
+                True,
                 False,
                 True,
                 "Sjö",
@@ -872,6 +871,21 @@ class TestUnitGeometry:
             (
                 "ground",
                 "mark",
+                True,
+                True,
+                True,
+                "Sjö",
+                [
+                    (
+                        "Sjö",
+                        gpd.GeoDataFrame(geometry=[Polygon([(0, 0), (1, 1), (1, 0)])]),
+                    )
+                ],
+            ),
+            (
+                "ground",
+                "mark",
+                False,
                 True,
                 True,
                 "Sjö",
@@ -885,15 +899,16 @@ class TestUnitGeometry:
         ],
     )
     @patch("lantmateriet.geometry.Geometry._get_items")
-    @patch("lantmateriet.geometry.Geometry._execute_dissolve_parallel")
+    @patch("lantmateriet.geometry.Geometry._dissolve_parallel")
     @patch("lantmateriet.geometry.Geometry.__init__", return_value=None)
     def test_unit_process(
         self,
         mock_geometry_init,
-        mock_execute_dissolve_parallel,
+        mock_dissolve_parallel,
         mock_get_items,
         item_type,
         layer,
+        dissolve,
         set_area,
         set_length,
         key,
@@ -903,21 +918,27 @@ class TestUnitGeometry:
 
         Args:
             mock_geometry_init: mock of Geometry init
-            mock_execute_dissolve_parallel: mock of Geometry _execute_dissolve_parallel
+            mock_dissolve_parallel: mock of Geometry _dissolve_parallel
             mock_get_items: mock of Geometry _get_items
             item_type: item type
             layer: layer
+            dissolve: dissolve flag
             set_area: set area flag
             set_length: set length flag
             key: key
             dissolved_geometry: dissolved geometry
         """
-        mock_execute_dissolve_parallel.return_value = dissolved_geometry
+        if dissolve:
+            mock_dissolve_parallel.return_value = dissolved_geometry
+        else:
+            mock_get_items.return_value = dissolved_geometry
         geometry = Geometry("path")
 
-        result = geometry._process(item_type, layer, set_area, set_length)
+        result = geometry._process(item_type, layer, dissolve, set_area, set_length)
 
         mock_get_items.assert_called_once_with(item_type, layer)
+        if dissolve:
+            mock_dissolve_parallel.assert_called_once()
         assert set(result.keys()) == set([x[0] for x in dissolved_geometry])
         testing.assert_geodataframe_equal(result[key], dissolved_geometry[0][1])
 
