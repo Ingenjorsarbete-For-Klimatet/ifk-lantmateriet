@@ -13,6 +13,17 @@ class BaseConfig:
     border_county: str = "Länsgräns"
     border_municipality: str = "Kommungräns"
 
+    def __getitem__(self, key):
+        """Get item.
+
+        Args:
+            key: key
+
+        Returns:
+            value
+        """
+        return self.__getattribute__(key)
+
 
 class Config1M(BaseConfig):
     """Topography 1M config class."""
@@ -27,7 +38,8 @@ class Config1M(BaseConfig):
         "Hav": "16_hav.geojson",
         "Ej karterat område": "17_ej_kartlagt.geojson",
     }
-    exclude_ground = {"Hav", "Ej karterat område"}
+    building: dict[str, str] = {}
+    exclude = {"Hav", "Ej karterat område"}
 
     ground_water = {
         "Hav",
@@ -59,7 +71,16 @@ class Config50(BaseConfig):
         "Hav": "16_hav.geojson",
         "Ej karterat område": "17_ej_kartlagt.geojson",
     }
-    exclude_ground = {"Hav", "Ej karterat område"}
+    building: dict[str, str] = {
+        "Bostad": "01_bostad.geojson",
+        "Industri": "02_industri.geojson",
+        "Samhällsfunktion": "03_samhallsfunktion.geojson",
+        "Verksamhet": "04_verksamhet.geojson",
+        "Ekonomibyggnad": "05_ekonomibyggnad.geojson",
+        "Komplementbyggnad": "06_komplementbyggnad.geojson",
+        "Övrig byggnad": "07_ovrig.geojson",
+    }
+    exclude = {"Hav", "Ej karterat område"}
 
     ground_water = {
         "Anlagt vatten",
