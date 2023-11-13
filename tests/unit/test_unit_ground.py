@@ -80,7 +80,7 @@ class TestUnitGround:
         """Unit test of Ground process method.
 
         Args:
-            mock_ground_init: mock of Geometry __init__
+            mock_ground_init: mock of Ground __init__
             mock_ground_process: mock of Ground _process
         """
         ground = Ground("path")
@@ -93,7 +93,7 @@ class TestUnitGround:
         """Unit test of Ground save method.
 
         Args:
-            mock_ground_init: mock of Geometry __init__
+            mock_ground_init: mock of Ground __init__
             mock_ground_save: mock of Ground _save
         """
         ground = Ground("path")
