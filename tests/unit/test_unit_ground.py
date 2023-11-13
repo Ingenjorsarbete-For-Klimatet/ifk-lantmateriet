@@ -19,7 +19,7 @@ class TestUnitGround:
                 "mark",
                 True,
                 gpd.GeoDataFrame(
-                    {"objekttyp": [k for k in config.config_50.ground.keys()]}
+                    {"objekttyp": [k for k in config.config_50.ground["mark"].keys()]}
                 ),
                 config.config_50,
             ),
@@ -32,7 +32,7 @@ class TestUnitGround:
                     {
                         "objekttyp": [
                             k
-                            for k in config.config_50.ground.keys()
+                            for k in config.config_50.ground["mark"].keys()
                             if k not in {"Sjö"}
                         ]
                     }
@@ -84,8 +84,11 @@ class TestUnitGround:
             mock_ground_process: mock of Ground _process
         """
         ground = Ground("path")
+        ground.item_type = "ground"
+        ground.layer = "mark"
+
         ground.process()
-        mock_ground_process.assert_called_once_with("ground", True, True)
+        mock_ground_process.assert_called_once_with("ground", "mark", True, True)
 
     @patch("lantmateriet.ground.Ground._save")
     @patch("lantmateriet.ground.Ground.__init__", return_value=None)
@@ -97,5 +100,8 @@ class TestUnitGround:
             mock_ground_save: mock of Ground _save
         """
         ground = Ground("path")
+        ground.item_type = "ground"
+        ground.layer = "mark"
+
         ground.save({}, "path")
-        mock_ground_save.assert_called_once_with("ground", {}, "path")
+        mock_ground_save.assert_called_once_with("ground", "mark", {}, "path")

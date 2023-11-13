@@ -16,23 +16,27 @@ class TestUnitConstruction:
             (
                 "path",
                 "50",
-                "mark",
+                "byggnad",
                 True,
                 gpd.GeoDataFrame(
-                    {"objekttyp": [k for k in config.config_50.construction.keys()]}
+                    {
+                        "objekttyp": [
+                            k for k in config.config_50.construction["byggnad"].keys()
+                        ]
+                    }
                 ),
                 config.config_50,
             ),
             (
                 "path",
                 "50",
-                "mark",
+                "byggnad",
                 True,
                 gpd.GeoDataFrame(
                     {
                         "objekttyp": [
                             k
-                            for k in config.config_50.construction.keys()
+                            for k in config.config_50.construction["byggnad"].keys()
                             if k not in {"Bostad"}
                         ]
                     }
@@ -44,7 +48,7 @@ class TestUnitConstruction:
     @patch("lantmateriet.geometry.gpd.read_file")
     def test_unit_construction_init(
         self,
-        mcck_gpd_read_file,
+        mock_gpd_read_file,
         file_name,
         detail_level,
         layer,
@@ -55,7 +59,7 @@ class TestUnitConstruction:
         """Unit test of Construction __init__ method.
 
         Args;
-            mcck_gpd_read_file: mock of gpd read_file
+            mock_gpd_read_file: mock of gpd read_file
             file_name: file_name
             detail_level: detail_level
             layer: layer
@@ -63,13 +67,13 @@ class TestUnitConstruction:
             df: dataframe
             expected_result: expected result
         """
-        mcck_gpd_read_file.return_value = df
+        mock_gpd_read_file.return_value = df
         if expected_result is None:
             with pytest.raises(KeyError):
                 construction = Construction(file_name, detail_level, layer, use_arrow)
         else:
             construction = Construction(file_name, detail_level, layer, use_arrow)
-            mcck_gpd_read_file.assert_called_with(
+            mock_gpd_read_file.assert_called_with(
                 file_name, layer=layer, use_arrow=use_arrow
             )
             assert construction.config == expected_result
@@ -82,12 +86,17 @@ class TestUnitConstruction:
         """Unit test of Construction process method.
 
         Args:
-            mock_construction_init: mock of Geometry __init__
+            mock_construction_init: mock of Construction __init__
             mock_construction_process: mock of Construction _process
         """
         construction = Construction("path")
+        construction.item_type = "construction"
+        construction.layer = "byggnad"
+
         construction.process()
-        mock_construction_process.assert_called_once_with("construction", True, True)
+        mock_construction_process.assert_called_once_with(
+            "construction", "byggnad", True, True
+        )
 
     @patch("lantmateriet.construction.Construction._save")
     @patch("lantmateriet.construction.Construction.__init__", return_value=None)
@@ -101,5 +110,10 @@ class TestUnitConstruction:
             mock_construction_save: mock of Construction _save
         """
         construction = Construction("path")
+        construction.item_type = "construction"
+        construction.layer = "byggnad"
+
         construction.save({}, "path")
-        mock_construction_save.assert_called_once_with("construction", {}, "path")
+        mock_construction_save.assert_called_once_with(
+            "construction", "byggnad", {}, "path"
+        )
