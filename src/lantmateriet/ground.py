@@ -46,7 +46,7 @@ class Ground(Geometry):
         Returns:
             map of ground items including
         """
-        return self._process("ground", self.layer, set_area, set_length)
+        return self._process(self.item_type, self.layer, set_area, set_length)
 
     def save(self, all_items: dict[str, gpd.GeoDataFrame], save_path: str):
         """Save processed ground items in EPSG:4326 as GeoJSON.
@@ -55,4 +55,4 @@ class Ground(Geometry):
             all_items: GeoDataFrame items to save
             save_path: path to save files in
         """
-        self._save("ground", self.layer, all_items, save_path)
+        self._save(self.item_type, self.layer, all_items, save_path)
