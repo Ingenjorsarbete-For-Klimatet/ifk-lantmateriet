@@ -19,18 +19,18 @@ class Construction(Geometry):
         Args:
             file_path: path to border data
             detail_level: level of detail of data
-            layer: layer to load, must be present in config.ground dict
+            layer: layer to load, must be present in config.construction dict
             use_arrow: use arrow for file-loading
 
         Raises:
             NotImplementedError: if detail level not implemented
-            KeyError: if data objekttyp not equal to ground dict
+            KeyError: if data objekttyp not equal to construction dict
         """
         super().__init__(file_path, detail_level, layer, use_arrow)
         self.layer = layer
         self.item_type = "construction"
 
-        if set(self.df["objekttyp"]) != set(self.config.construction.keys()):
+        if set(self.df["objekttyp"]) != set(self.config.construction[layer].keys()):
             raise KeyError(
                 "Data objekttyp not equal to construction dict. Has the input data changed?"
             )
@@ -45,7 +45,7 @@ class Construction(Geometry):
             set_length: set length column
 
         Returns:
-            map of ground items including
+            map of construction items
         """
         return self._process(self.item_type, self.layer, set_area, set_length)
 
