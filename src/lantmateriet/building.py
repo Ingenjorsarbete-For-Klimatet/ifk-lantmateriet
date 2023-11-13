@@ -27,9 +27,10 @@ class Building(Geometry):
             KeyError: if data objekttyp not equal to ground dict
         """
         super().__init__(file_path, detail_level, layer, use_arrow)
-        self.items = set(self.df["objekttyp"])
+        self.layer = layer
+        self.item_type = "building"
 
-        if self.items != set(self.config.building.keys()):
+        if set(self.df["objekttyp"]) != set(self.config.building.keys()):
             raise KeyError(
                 "Data objekttyp not equal to building dict. Has the input data changed?"
             )
@@ -46,7 +47,7 @@ class Building(Geometry):
         Returns:
             map of ground items including
         """
-        return self._process("building", set_area, set_length)
+        return self._process(self.item_type, self.layer, set_area, set_length)
 
     def save(self, all_items: dict[str, gpd.GeoDataFrame], save_path: str):
         """Save processed building items in EPSG:4326 as GeoJSON.
@@ -55,4 +56,4 @@ class Building(Geometry):
             all_items: GeoDataFrame items to save
             save_path: path to save files in
         """
-        self._save("building", all_items, save_path)
+        self._save(self.item_type, self.layer, all_items, save_path)
