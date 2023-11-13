@@ -19,7 +19,7 @@ class Building(Geometry):
         Args:
             file_path: path to border data
             detail_level: level of detail of data
-            layer: layer to load
+            layer: layer to load, must be present in config.ground dict
             use_arrow: use arrow for file-loading
 
         Raises:
