@@ -28,6 +28,7 @@ class Ground(Geometry):
         super().__init__(file_path, detail_level, layer, use_arrow)
         self.layer = layer
         self.item_type = "ground"
+        self.dissolve = True
 
         if set(self.df["objekttyp"]) != set(self.config.ground[layer].keys()):
             raise KeyError(
@@ -46,7 +47,9 @@ class Ground(Geometry):
         Returns:
             map of ground items including
         """
-        return self._process(self.item_type, self.layer, set_area, set_length)
+        return self._process(
+            self.item_type, self.layer, self.dissolve, set_area, set_length
+        )
 
     def save(self, all_items: dict[str, gpd.GeoDataFrame], save_path: str):
         """Save processed ground items in EPSG:4326 as GeoJSON.

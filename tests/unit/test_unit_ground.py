@@ -86,9 +86,10 @@ class TestUnitGround:
         ground = Ground("path")
         ground.item_type = "ground"
         ground.layer = "mark"
+        ground.dissolve = True
 
         ground.process()
-        mock_ground_process.assert_called_once_with("ground", "mark", True, True)
+        mock_ground_process.assert_called_once_with("ground", "mark", True, True, True)
 
     @patch("lantmateriet.ground.Ground._save")
     @patch("lantmateriet.ground.Ground.__init__", return_value=None)

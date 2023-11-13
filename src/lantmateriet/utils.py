@@ -8,7 +8,7 @@ logging.basicConfig()
 logging.getLogger().setLevel(logging.INFO)
 
 
-def timeit(has_key: bool = True):
+def timeit(has_key: bool = False):
     """Time decorator.
 
     Args:

@@ -1,5 +1,4 @@
 """Geometry module."""
-import time
 from copy import deepcopy
 from multiprocessing import Pool
 from os import path
@@ -123,34 +122,20 @@ class DissolveTouchingGeometry:
         Returns:
             indices of unique connected touching geometries
         """
-        t0 = time.perf_counter()
         spatial_index = self._get_spatial_index()
         input_geometry_index, touching_geometry_index = spatial_index.nearest(
             self.df["geometry"], exclusive=True, max_distance=TOUCHING_MAX_DIST
         )
-        t1 = time.perf_counter()
-        print(t1 - t0)
 
         disconnected_touching_geometries = self._format_touching_geometries(
             input_geometry_index, touching_geometry_index
         )
 
-        t2 = time.perf_counter()
-        print(t2 - t1)
-
-        # return disconnected_touching_geometries
-
         connected_touching_geometries = self._connect_touching_geometries(
             disconnected_touching_geometries
         )
-        t3 = time.perf_counter()
-        print(t3 - t2)
 
-        tmp = self._remove_duplicate_geometries(connected_touching_geometries)
-        t4 = time.perf_counter()
-        print(t4 - t3)
-
-        return tmp
+        return self._remove_duplicate_geometries(connected_touching_geometries)
 
     def _get_df_indices(self, touching_geometries: dict) -> tuple[list, list]:
         """Get df index to keep and drop.
@@ -383,7 +368,9 @@ class Geometry:
         if dissolve is True:
             geometry_items = self._dissolve_parallel(geometry_items)
         else:
-            geometry_items = self.df.explode(ignore_index=True)
+            geometry_items = [
+                (k, v.explode(ignore_index=True)) for k, v in geometry_items
+            ]
 
         if set_area is True:
             geometry_items = [(k, Geometry._set_area(v)) for k, v in geometry_items]

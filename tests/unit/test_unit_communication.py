@@ -92,10 +92,11 @@ class TestUnitCommunication:
         communication = Communication("path")
         communication.item_type = "communication"
         communication.layer = "vaglinje"
+        communication.dissolve = False
 
         communication.process()
         mock_communication_process.assert_called_once_with(
-            "communication", "vaglinje", False, True
+            "communication", "vaglinje", False, False, True
         )
 
     @patch("lantmateriet.communication.Communication._save")

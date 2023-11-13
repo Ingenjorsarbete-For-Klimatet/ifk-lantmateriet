@@ -29,6 +29,7 @@ class Construction(Geometry):
         super().__init__(file_path, detail_level, layer, use_arrow)
         self.layer = layer
         self.item_type = "construction"
+        self.dissolve = True
 
         if set(self.df["objekttyp"]) != set(self.config.construction[layer].keys()):
             raise KeyError(
@@ -47,7 +48,9 @@ class Construction(Geometry):
         Returns:
             map of construction items
         """
-        return self._process(self.item_type, self.layer, set_area, set_length)
+        return self._process(
+            self.item_type, self.layer, self.dissolve, set_area, set_length
+        )
 
     def save(self, all_items: dict[str, gpd.GeoDataFrame], save_path: str):
         """Save processed construction items in EPSG:4326 as GeoJSON.

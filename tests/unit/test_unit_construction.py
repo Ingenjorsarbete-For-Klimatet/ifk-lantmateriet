@@ -92,10 +92,11 @@ class TestUnitConstruction:
         construction = Construction("path")
         construction.item_type = "construction"
         construction.layer = "byggnad"
+        construction.dissolve = True
 
         construction.process()
         mock_construction_process.assert_called_once_with(
-            "construction", "byggnad", True, True
+            "construction", "byggnad", True, True, True
         )
 
     @patch("lantmateriet.construction.Construction._save")

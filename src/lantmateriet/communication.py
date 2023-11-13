@@ -29,6 +29,7 @@ class Communication(Geometry):
         super().__init__(file_path, detail_level, layer, use_arrow)
         self.layer = layer
         self.item_type = "communication"
+        self.dissolve = False
 
         if set(self.df["objekttyp"]) != set(self.config.communication[layer].keys()):
             raise KeyError(
@@ -44,7 +45,9 @@ class Communication(Geometry):
         Returns:
             map of ground items including
         """
-        return self._process(self.item_type, self.layer, False, set_length)
+        return self._process(
+            self.item_type, self.layer, self.dissolve, False, set_length
+        )
 
     def save(self, all_items: dict[str, gpd.GeoDataFrame], save_path: str):
         """Save processed communication items in EPSG:4326 as GeoJSON.
