@@ -382,6 +382,8 @@ class Geometry:
 
         if dissolve is True:
             geometry_items = self._dissolve_parallel(geometry_items)
+        else:
+            geometry_items = self.df.explode(ignore_index=True)
 
         if set_area is True:
             geometry_items = [(k, Geometry._set_area(v)) for k, v in geometry_items]
