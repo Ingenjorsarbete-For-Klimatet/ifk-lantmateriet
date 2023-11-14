@@ -1,11 +1,11 @@
-"""Building module."""
+"""Construction module."""
 
 import geopandas as gpd
 from lantmateriet.geometry import Geometry
 
 
-class Building(Geometry):
-    """Building class."""
+class Construction(Geometry):
+    """Construction class."""
 
     def __init__(
         self,
@@ -14,45 +14,49 @@ class Building(Geometry):
         layer: str = "mark",
         use_arrow: bool = True,
     ):
-        """Initialise Building object.
+        """Initialise Construction object.
 
         Args:
             file_path: path to border data
             detail_level: level of detail of data
-            layer: layer to load
+            layer: layer to load, must be present in config.construction dict
             use_arrow: use arrow for file-loading
 
         Raises:
             NotImplementedError: if detail level not implemented
-            KeyError: if data objekttyp not equal to ground dict
+            KeyError: if data objekttyp not equal to construction dict
         """
         super().__init__(file_path, detail_level, layer, use_arrow)
-        self.items = set(self.df["objekttyp"])
+        self.layer = layer
+        self.item_type = "construction"
+        self.dissolve = True
 
-        if self.items != set(self.config.building.keys()):
+        if set(self.df["objekttyp"]) != set(self.config.construction[layer].keys()):
             raise KeyError(
-                "Data objekttyp not equal to building dict. Has the input data changed?"
+                "Data objekttyp not equal to construction dict. Has the input data changed?"
             )
 
     def process(
         self, set_area: bool = True, set_length: bool = True
     ) -> dict[str, gpd.GeoDataFrame]:
-        """Process all building data items.
+        """Process all construction data items.
 
         Args:
             set_area: set area column
             set_length: set length column
 
         Returns:
-            map of ground items including
+            map of construction items
         """
-        return self._process("building", set_area, set_length)
+        return self._process(
+            self.item_type, self.layer, self.dissolve, set_area, set_length
+        )
 
     def save(self, all_items: dict[str, gpd.GeoDataFrame], save_path: str):
-        """Save processed building items in EPSG:4326 as GeoJSON.
+        """Save processed construction items in EPSG:4326 as GeoJSON.
 
         Args:
             all_items: GeoDataFrame items to save
             save_path: path to save files in
         """
-        self._save("building", all_items, save_path)
+        self._save(self.item_type, self.layer, all_items, save_path)

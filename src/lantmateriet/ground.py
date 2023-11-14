@@ -1,5 +1,6 @@
 """Ground module."""
 import geopandas as gpd
+import pandas as pd
 from lantmateriet.geometry import Geometry
 
 
@@ -18,7 +19,7 @@ class Ground(Geometry):
         Args:
             file_path: path to border data
             detail_level: level of detail of data
-            layer: layer to load
+            layer: layer to load, must be present in config.ground dict
             use_arrow: use arrow for file-loading
 
         Raises:
@@ -26,9 +27,13 @@ class Ground(Geometry):
             KeyError: if data objekttyp not equal to ground dict
         """
         super().__init__(file_path, detail_level, layer, use_arrow)
-        self.items = set(self.df["objekttyp"])
+        self.layer = layer
+        self.item_type = "ground"
+        self.dissolve = True
 
-        if self.items != set(self.config.ground.keys()):
+        if set(self.df["objekttyp"]) | self.config.exclude != (
+            set(self.config.ground[layer].keys()) | self.config.exclude
+        ):
             raise KeyError(
                 "Data objekttyp not equal to ground dict. Has the input data changed?"
             )
@@ -45,7 +50,20 @@ class Ground(Geometry):
         Returns:
             map of ground items including
         """
-        return self._process("ground", set_area, set_length)
+        df_processed = self._process(
+            self.item_type, self.layer, self.dissolve, set_area, set_length
+        )
+        df_processed["Sverige"] = pd.concat(
+            [
+                v[~v["objekttyp"].isin(self.config.ground_water)]
+                for _, v in df_processed.items()
+            ]
+        ).dissolve()
+        df_processed["Sverige"] = self._set_area(df_processed["Sverige"])
+        df_processed["Sverige"] = self._set_length(df_processed["Sverige"])
+        df_processed["Sverige"]["objekttyp"] = "Sverige"
+
+        return df_processed
 
     def save(self, all_items: dict[str, gpd.GeoDataFrame], save_path: str):
         """Save processed ground items in EPSG:4326 as GeoJSON.
@@ -54,4 +72,7 @@ class Ground(Geometry):
             all_items: GeoDataFrame items to save
             save_path: path to save files in
         """
-        self._save("ground", all_items, save_path)
+        all_items_exclude = {
+            k: v for k, v in all_items.items() if k not in self.config.exteriorise
+        }
+        self._save(self.item_type, self.layer, all_items_exclude, save_path)
