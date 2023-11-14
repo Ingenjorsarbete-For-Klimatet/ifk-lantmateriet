@@ -406,6 +406,5 @@ class Geometry:
         """
         for object_name, item in all_items.items():
             file_name = self.config[item_type][layer][object_name]
-            print(file_name)
             item = item.to_crs(self.config.epsg_4326)
             item.to_file(path.join(save_path, file_name), driver="GeoJSON")
