@@ -72,4 +72,7 @@ class Ground(Geometry):
             all_items: GeoDataFrame items to save
             save_path: path to save files in
         """
-        self._save(self.item_type, self.layer, all_items, save_path)
+        all_items_exclude = {
+            k: v for k, v in all_items.items() if k not in self.config.exteriorise
+        }
+        self._save(self.item_type, self.layer, all_items_exclude, save_path)

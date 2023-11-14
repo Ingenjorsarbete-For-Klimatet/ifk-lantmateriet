@@ -112,6 +112,15 @@ class TestUnitGround:
         ground = Ground("path")
         ground.item_type = "ground"
         ground.layer = "mark"
+        ground.config = config.config_50
+        expected_data = {
+            k: v
+            for k, v in config.config_50.ground["mark"].items()
+            if k not in config.config_50.exteriorise
+        }
 
-        ground.save({}, "path")
-        mock_ground_save.assert_called_once_with("ground", "mark", {}, "path")
+        ground.save(config.config_50.ground["mark"], "path")
+
+        mock_ground_save.assert_called_once_with(
+            "ground", "mark", expected_data, "path"
+        )
