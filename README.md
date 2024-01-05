@@ -5,7 +5,7 @@
         <img src="https://github.com/Ingenjorsarbete-For-Klimatet/ifk-lantmateriet/actions/workflows/github-action-build.yaml/badge.svg?branch=main" alt="build" style="max-width: 100%;">
     </a>
     <a href="https://github.com/Ingenjorsarbete-For-Klimatet/ifk-lantmateriet/actions/workflows/github-action-build.yaml">
-        <img src="https://img.shields.io/endpoint?logo=github&labelColor=%23333a41&logoColor=%23959da5&url=https://gist.githubusercontent.com/mgcth/955d89d05ed9ca61fb3774bc68bbae33/raw/ifk-lantmateriet-coverage-badge.json" alt="coverage" style="max-width: 100%;">
+        <img src="https://img.shields.io/endpoint?logo=github&labelColor=%23333a41&logoColor=%23959da5&url=https://gist.githubusercontent.com/mgcth/e2326bc24f74f346a118a97b09e852ec/raw/ifk-lantmateriet-coverage-badge.json" alt="coverage" style="max-width: 100%;">
     </a>
     <a href="https://github.com/Ingenjorsarbete-For-Klimatet/ifk-lantmateriet/actions/workflows/github-action-docs.yaml">
         <img src="https://github.com/Ingenjorsarbete-For-Klimatet/ifk-lantmateriet/actions/workflows/github-action-docs.yaml/badge.svg?branch=main" alt="docs" style="max-width: 100%;">
