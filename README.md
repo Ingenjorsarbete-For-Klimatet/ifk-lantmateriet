@@ -35,29 +35,4 @@
 
 ## Description
 
-Welcome to ifk-lantmateriet.
-
-## Configuration
-
-When you start a new project, apart from the obvious changes,
-there are some details to consider.
-
-- Build workflow, follow the guide in [dynamic badges](https://github.com/Schneegans/dynamic-badges-action).
-- To build docs, change `branch` in `github/workflows/github-action-docs.yaml`
-from `["SET_TO_MAIN"]` to `["main"]`. You also need to activate Pages under repo
-Settings/Pages.
-
-Install `copier` (install `pipx` through `pip`) as
-
-```bash
-pipx install copier
-```
-
-and then do
-
-```bash
-copier copy https://github.com/Ingenjorsarbete-For-Klimatet/ifk-python-template.git /path/to/project-name
-```
-
-Copier supports updating projects based on templates when the template updates.
-See <a href="https://copier.readthedocs.io/en/stable/" taget="_blank">copier docs</a>.
+Welcome to ifk-lantmateriet. This repo contains code to parse data from Lantmäteriet.
