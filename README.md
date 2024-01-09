@@ -1,10 +1,10 @@
 <h1 align="center">ifk-lantmateriet</h1>
 
 <p align="center">
-    <a href="https://github.com/Ingenjorsarbete-For-Klimatet/ifk-lantmateriet/actions/workflows/github-action-build.yaml">
-        <img src="https://github.com/Ingenjorsarbete-For-Klimatet/ifk-lantmateriet/actions/workflows/github-action-build.yaml/badge.svg?branch=main" alt="build" style="max-width: 100%;">
+    <a href="https://github.com/Ingenjorsarbete-For-Klimatet/ifk-lantmateriet/actions/workflows/github-action-test.yaml">
+        <img src="https://github.com/Ingenjorsarbete-For-Klimatet/ifk-lantmateriet/actions/workflows/github-action-test.yaml/badge.svg?branch=main" alt="test" style="max-width: 100%;">
     </a>
-    <a href="https://github.com/Ingenjorsarbete-For-Klimatet/ifk-lantmateriet/actions/workflows/github-action-build.yaml">
+    <a href="https://github.com/Ingenjorsarbete-For-Klimatet/ifk-lantmateriet/actions/workflows/github-action-test.yaml">
         <img src="https://img.shields.io/endpoint?logo=github&labelColor=%23333a41&logoColor=%23959da5&url=https://gist.githubusercontent.com/mgcth/e2326bc24f74f346a118a97b09e852ec/raw/ifk-lantmateriet-coverage-badge.json" alt="coverage" style="max-width: 100%;">
     </a>
     <a href="https://github.com/Ingenjorsarbete-For-Klimatet/ifk-lantmateriet/actions/workflows/github-action-docs.yaml">
