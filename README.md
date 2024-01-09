@@ -1,10 +1,10 @@
 <h1 align="center">ifk-lantmateriet</h1>
 
 <p align="center">
-    <a href="https://github.com/Ingenjorsarbete-For-Klimatet/ifk-lantmateriet/actions/workflows/github-action-build.yaml">
-        <img src="https://github.com/Ingenjorsarbete-For-Klimatet/ifk-lantmateriet/actions/workflows/github-action-build.yaml/badge.svg?branch=main" alt="build" style="max-width: 100%;">
+    <a href="https://github.com/Ingenjorsarbete-For-Klimatet/ifk-lantmateriet/actions/workflows/github-action-test.yaml">
+        <img src="https://github.com/Ingenjorsarbete-For-Klimatet/ifk-lantmateriet/actions/workflows/github-action-test.yaml/badge.svg?branch=main" alt="test" style="max-width: 100%;">
     </a>
-    <a href="https://github.com/Ingenjorsarbete-For-Klimatet/ifk-lantmateriet/actions/workflows/github-action-build.yaml">
+    <a href="https://github.com/Ingenjorsarbete-For-Klimatet/ifk-lantmateriet/actions/workflows/github-action-test.yaml">
         <img src="https://img.shields.io/endpoint?logo=github&labelColor=%23333a41&logoColor=%23959da5&url=https://gist.githubusercontent.com/mgcth/e2326bc24f74f346a118a97b09e852ec/raw/ifk-lantmateriet-coverage-badge.json" alt="coverage" style="max-width: 100%;">
     </a>
     <a href="https://github.com/Ingenjorsarbete-For-Klimatet/ifk-lantmateriet/actions/workflows/github-action-docs.yaml">
@@ -35,29 +35,5 @@
 
 ## Description
 
-Welcome to ifk-lantmateriet.
+Welcome to ifk-lantmateriet. This repo contains code to parse data from Lantmäteriet.
 
-## Configuration
-
-When you start a new project, apart from the obvious changes,
-there are some details to consider.
-
-- Build workflow, follow the guide in [dynamic badges](https://github.com/Schneegans/dynamic-badges-action).
-- To build docs, change `branch` in `github/workflows/github-action-docs.yaml`
-from `["SET_TO_MAIN"]` to `["main"]`. You also need to activate Pages under repo
-Settings/Pages.
-
-Install `copier` (install `pipx` through `pip`) as
-
-```bash
-pipx install copier
-```
-
-and then do
-
-```bash
-copier copy https://github.com/Ingenjorsarbete-For-Klimatet/ifk-python-template.git /path/to/project-name
-```
-
-Copier supports updating projects based on templates when the template updates.
-See <a href="https://copier.readthedocs.io/en/stable/" taget="_blank">copier docs</a>.
