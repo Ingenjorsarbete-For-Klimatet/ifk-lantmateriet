@@ -36,3 +36,4 @@
 ## Description
 
 Welcome to ifk-lantmateriet. This repo contains code to parse data from Lantmäteriet.
+
