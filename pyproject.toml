@@ -12,7 +12,7 @@ authors = [
     { name = "Mladen Gibanica", email = "11275336+mgcth@users.noreply.github.com" },
 ]
 requires-python = ">=3.9"
-dependencies = ["geopandas ~= 0.14", "pyogrio ~= 0.6.0", "pyarrow ~= 14.0"]
+dependencies = ["geopandas ~= 0.14", "pyogrio ~= 0.7.0", "pyarrow ~= 14.0"]
 
 [project.optional-dependencies]
 lint = [
