@@ -1,4 +1,5 @@
 """Construction integration tests."""
+
 import geopandas as gpd
 import pandas as pd
 from geopandas import testing
