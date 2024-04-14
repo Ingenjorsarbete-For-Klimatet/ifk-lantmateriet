@@ -1,4 +1,5 @@
 """Geometry unit tests."""
+
 from copy import deepcopy
 from unittest.mock import call, patch
 

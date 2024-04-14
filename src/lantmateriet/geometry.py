@@ -1,4 +1,5 @@
 """Geometry module."""
+
 from copy import deepcopy
 from multiprocessing import Pool
 from os import path

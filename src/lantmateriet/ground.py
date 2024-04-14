@@ -1,4 +1,5 @@
 """Ground module."""
+
 import geopandas as gpd
 import pandas as pd
 from lantmateriet.geometry import Geometry
@@ -53,12 +54,16 @@ class Ground(Geometry):
         df_processed = self._process(
             self.item_type, self.layer, self.dissolve, set_area, set_length
         )
-        df_processed["Sverige"] = pd.concat(
-            [
-                v[~v["objekttyp"].isin(self.config.ground_water)]
-                for _, v in df_processed.items()
-            ]
-        ).dissolve()
+        df_processed["Sverige"] = (
+            pd.concat(
+                [
+                    v  # v[~v["objekttyp"].isin(self.config.ground_water)]
+                    for _, v in df_processed.items()
+                ]
+            )
+            .dissolve()
+            .explode(index_parts=False)
+        )
         df_processed["Sverige"] = self._set_area(df_processed["Sverige"])
         df_processed["Sverige"] = self._set_length(df_processed["Sverige"])
         df_processed["Sverige"]["objekttyp"] = "Sverige"
