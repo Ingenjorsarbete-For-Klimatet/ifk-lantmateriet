@@ -3,7 +3,7 @@
 import geopandas as gpd
 import pandas as pd
 from geopandas import testing
-from lantmateriet.ground import Ground
+from lantmateriet.polygon import Ground
 
 test_mark_geojson = gpd.read_file(
     "tests/fixtures/test_integration_ground_mark.geojson", layer="mark", use_arrow=True

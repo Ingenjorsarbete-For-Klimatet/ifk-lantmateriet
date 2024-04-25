@@ -1,16 +1,15 @@
 """Geometry module."""
 
+import os
 from copy import deepcopy
-from multiprocessing import Pool
 from os import path
 from typing import Union
 
 import geopandas as gpd
 from lantmateriet import config
-from lantmateriet.utils import smap, timeit
+from lantmateriet.utils import timeit
 from shapely.ops import polygonize
 
-WORKERS = 6
 TOUCHING_MAX_DIST = 1e-5
 BUFFER_DIST = 1e-8
 
@@ -215,17 +214,18 @@ class DissolveTouchingGeometry:
 class Geometry:
     """Geometry class."""
 
-    def __init__(self, file_path: str, detail_level: str, layer: str, use_arrow: bool):
+    def __init__(
+        self, file_path: str, detail_level: str, layer: str, name: str, field: str
+    ):
         """Initialise Geometry object.
 
         Args:
             file_path: path to border data
             detail_level: level of detail of data
             layer: layer to load
-            use_arrow: use arrow to load file
+            name: name of data
+            field: geopandas field
         """
-        self.df = gpd.read_file(file_path, layer=layer, use_arrow=use_arrow)
-
         if detail_level == "50":
             self.config: Union[config.Config1M, config.Config50] = config.config_50
         elif detail_level == "1m":
@@ -233,6 +233,21 @@ class Geometry:
         else:
             raise NotImplementedError(
                 f"The level of detail: {detail_level} is not implemented."
+            )
+
+        self._file_path = file_path
+        self._layer = layer
+        self._name = name
+        self._field = field
+        self.df = None
+
+        if name not in self.config.exclude:
+            self.df = gpd.read_file(
+                file_path,
+                layer=layer,
+                where=f"{field}='{name}'",
+                engine="pyogrio",
+                use_arrow=True,
             )
 
     @staticmethod
@@ -263,9 +278,7 @@ class Geometry:
 
     @timeit(True)
     @staticmethod
-    def _dissolve(
-        object_name: str, df: gpd.GeoDataFrame
-    ) -> tuple[str, gpd.GeoDataFrame]:
+    def _dissolve(df: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         """Dissolve geometry.
 
         Args:
@@ -273,16 +286,13 @@ class Geometry:
             df: geopandas GeoDataFrame
 
         Returns:
-            object name and dissolved geopandas GeoDataFrame
+            dissolved geopandas GeoDataFrame
         """
-        df_dissolved = DissolveTouchingGeometry(df).dissolve_and_explode()
-        return (object_name, df_dissolved)
+        return DissolveTouchingGeometry(df).dissolve_and_explode()
 
     @timeit(True)
     @staticmethod
-    def _dissolve_exterior(
-        object_name: str, df: gpd.GeoDataFrame
-    ) -> tuple[str, gpd.GeoDataFrame]:
+    def _dissolve_exterior(df: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         """Dissolve exterior geometry.
 
         Args:
@@ -290,122 +300,48 @@ class Geometry:
             df: geopandas GeoDataFrame
 
         Returns:
-            object name and dissolved geopandas GeoDataFrame
+            dissolved geopandas GeoDataFrame
         """
-        df_dissolved = DissolveTouchingGeometry(df).dissolve_and_explode_exterior()
-        return (object_name, df_dissolved)
-
-    def _get_items(
-        self, item_type: str, layer: str
-    ) -> list[tuple[str, gpd.GeoDataFrame]]:
-        """Get items.
-
-        Args:
-            item_type: type of config item
-            layer: str
-
-        Returns:
-            list of file names and corresponding geodata
-        """
-        return [
-            (object_name, self.df[self.df["objekttyp"] == object_name])
-            for object_name, _ in self.config[item_type][layer].items()
-            if object_name not in self.config.exclude
-        ]
-
-    def _prepare_parallel_list(
-        self, geometry_items: list[tuple[str, gpd.GeoDataFrame]]
-    ) -> list[tuple]:
-        """Prepare list for parallel processing.
-
-        Args:
-            geometry_items: list of data items
-
-        Returns:
-            list of tuples of functions and data
-        """
-        return [
-            (
-                Geometry._dissolve_exterior
-                if object_name in self.config.exteriorise
-                else Geometry._dissolve,
-                object_name,
-                geometry_item,
-            )
-            for object_name, geometry_item in geometry_items
-        ]
-
-    def _dissolve_parallel(self, geometry_items: list) -> list:
-        """Parallel processing of dissolve.
-
-        Args:
-            geometry_items: list of data items
-
-        Returns:
-            dissolved data
-        """
-        geometry = self._prepare_parallel_list(geometry_items)
-        with Pool(WORKERS) as pool:
-            geometry_dissolved = pool.starmap(smap, geometry)
-
-        return geometry_dissolved
+        return DissolveTouchingGeometry(df).dissolve_and_explode_exterior()
 
     def _process(
         self,
-        item_type: str,
-        layer: str,
         dissolve: bool = False,
         set_area: bool = True,
         set_length: bool = True,
-    ) -> dict[str, gpd.GeoDataFrame]:
+    ) -> None:
         """Process all data items.
 
         Args:
-            item_type: item type
-            layer: layer
             dissolve: dissolve touching geometries
             set_area: set area column
             set_length: set length column
-
-        Returns:
-            map of geometry items including
         """
-        geometry_items = self._get_items(item_type, layer)
-
         if dissolve is True:
-            geometry_items = self._dissolve_parallel(geometry_items)
+            if self._name in self.config.exteriorise:
+                self.df = Geometry._dissolve_exterior(self.df)
+            else:
+                self.df = Geometry._dissolve(self.df)
         else:
-            geometry_items = [
-                (k, v.explode(ignore_index=True)) for k, v in geometry_items
-            ]
+            self.df = self.df.explode(ignore_index=True)
 
         if set_area is True:
-            geometry_items = [(k, Geometry._set_area(v)) for k, v in geometry_items]
+            self.df = Geometry._set_area(self.df)
 
         if set_length is True:
-            geometry_items = [(k, Geometry._set_length(v)) for k, v in geometry_items]
+            self.df = Geometry._set_length(self.df)
 
-        return {
-            object_name: geometry_items
-            for object_name, geometry_items in geometry_items
-        }
-
-    def _save(
-        self,
-        item_type: str,
-        layer: str,
-        all_items: dict[str, gpd.GeoDataFrame],
-        save_path: str,
-    ):
+    def _save(self, save_path: str, file: str) -> None:
         """Save processed geometry items in EPSG:4326 as GeoJSON.
 
         Args:
-            item_type: item type
-            layer: layer
-            all_items: GeoDataFrame items to save
             save_path: path to save files in
+            file: name of saved file
         """
-        for object_name, item in all_items.items():
-            file_name = self.config[item_type][layer][object_name]
-            item = item.to_crs(self.config.epsg_4326)
-            item.to_file(path.join(save_path, file_name), driver="GeoJSON")
+        folder_path = path.join(
+            save_path, self._file_path.split("/")[-1].split(".")[0], self._layer
+        )
+        os.makedirs(folder_path, exist_ok=True)
+
+        self.df = self.df.to_crs(self.config.epsg_4326)
+        self.df.to_file(path.join(folder_path, file) + ".geojson", driver="GeoJSON")

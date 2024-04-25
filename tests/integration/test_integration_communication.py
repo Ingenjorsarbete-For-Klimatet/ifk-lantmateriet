@@ -3,7 +3,7 @@
 import geopandas as gpd
 import pandas as pd
 from geopandas import testing
-from lantmateriet.communication import Communication
+from lantmateriet.line import Communication
 
 test_vaglinje_geojson = gpd.read_file(
     "tests/fixtures/test_integration_communication_vaglinje.geojson",

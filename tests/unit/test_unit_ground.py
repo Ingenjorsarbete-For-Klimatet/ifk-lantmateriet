@@ -5,7 +5,7 @@ from unittest.mock import patch
 import geopandas as gpd
 import pytest
 from lantmateriet import config
-from lantmateriet.ground import Ground
+from lantmateriet.polygon import Ground
 from shapely.geometry import Point
 
 

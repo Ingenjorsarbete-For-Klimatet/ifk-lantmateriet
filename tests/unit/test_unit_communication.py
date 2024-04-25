@@ -5,7 +5,7 @@ from unittest.mock import patch
 import geopandas as gpd
 import pytest
 from lantmateriet import config
-from lantmateriet.communication import Communication
+from lantmateriet.line import Communication
 
 
 class TestUnitCommunication:

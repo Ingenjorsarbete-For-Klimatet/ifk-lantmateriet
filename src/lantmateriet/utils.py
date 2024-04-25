@@ -5,8 +5,7 @@ import time
 from functools import wraps
 from typing import Callable
 
-logging.basicConfig()
-logging.getLogger().setLevel(logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def timeit(has_key: bool = False):
@@ -35,13 +34,3 @@ def timeit(has_key: bool = False):
         return wrap
 
     return timeit_decorator
-
-
-def smap(fun, *args):
-    """Useful in assigning different functions in Pool.map.
-
-    Args:
-        fun: function
-        *args: function arguments
-    """
-    return fun(*args)
