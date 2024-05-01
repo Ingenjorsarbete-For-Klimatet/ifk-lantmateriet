@@ -343,5 +343,5 @@ class Geometry:
         )
         os.makedirs(folder_path, exist_ok=True)
 
-        self.df = self.df.to_crs(self.config.epsg_4326)
-        self.df.to_file(path.join(folder_path, file) + ".geojson", driver="GeoJSON")
+        df = self.df.to_crs(self.config.epsg_4326)
+        df.to_file(path.join(folder_path, file) + ".geojson", driver="GeoJSON")

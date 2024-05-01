@@ -6,15 +6,6 @@ Configuration taken from
 - 50: https://www.lantmateriet.se/globalassets/geodata/geodataprodukter/pb-topografi-50-nedladdning-vektor.pdf
 """
 
-from typing import TypeVar
-import shapely
-
-from lantmateriet.line import Line
-from lantmateriet.point import Point
-from lantmateriet.polygon import Polygon
-
-Geometry = TypeVar("Geometry", Line, Polygon, Point)
-
 
 class BaseConfig:
     """Base config class."""
@@ -27,15 +18,6 @@ class BaseConfig:
     border_sea: str = "Sjöterritoriets gräns i havet"
     border_county: str = "Länsgräns"
     border_municipality: str = "Kommungräns"
-
-    file_geometry_mapping: dict[str, Geometry] = {
-        shapely.Point: Point,
-        shapely.MultiPoint: Point,
-        shapely.MultiLineString: Line,
-        shapely.LineString: Line,
-        shapely.Polygon: Polygon,
-        shapely.MultiPolygon: Polygon,
-    }
 
     def __getitem__(self, key):
         """Get item.
