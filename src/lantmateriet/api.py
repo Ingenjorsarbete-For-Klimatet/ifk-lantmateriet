@@ -3,6 +3,8 @@
 import io
 import json
 import logging
+import zipfile
+from typing import Optional
 
 import requests
 
@@ -42,28 +44,30 @@ def get_request(url: str) -> requests.Response:
 class Lantmateriet:
     """Lantmäteriet class."""
 
-    def __init__(self, order_id: str):
+    def __init__(self, order_id: str, save_path: Optional[str] = None):
         """Initialise Lantmäteriet.
 
         Args:
             order_id: order id to fetch data from
+            save_path: path to save downloaded files to
         """
         order_url = ORDER_URL + f"/geotorget/orderhanterare/v2/{order_id}"
         download_url = DOWNLOAD_URL + f"/download/{order_id}/files"
+        self._save_path = save_path
 
-        self.order = json.loads(get_request(order_url).content)
+        self._order = json.loads(get_request(order_url).content)
         download = json.loads(get_request(download_url).content)
-        self.download = {item["title"]: item for item in download}
+        self._download = {item["title"]: item for item in download}
 
     @property
-    def order_info(self) -> dict[str, str]:
+    def order(self) -> dict[str, str]:
         """Get order information."""
-        return self.order
+        return self._order
 
     @property
     def available_files(self) -> list[str]:
         """Get available files."""
-        return list(self.download.keys())
+        return list(self._download.keys())
 
     def download(self, title: str) -> io.BytesIO:
         """Download file by title.
@@ -74,5 +78,9 @@ class Lantmateriet:
         Returns:
             bytes io
         """
-        url = self.download[title]["href"]
-        return io.BytesIO(get_request(url).content)
+        logger.info(f"Started downloading {title}")
+        url = self._download[title]["href"]
+        content = get_request(url).content
+        zip = zipfile.ZipFile(io.BytesIO(content))
+        zip.extractall(self._save_path)
+        logger.info(f"Downloaded and unpacked {title} to {self._save_path}")

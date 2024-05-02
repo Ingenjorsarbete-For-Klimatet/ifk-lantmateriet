@@ -1,4 +1,4 @@
-"""Extract GEOJson from GPKG files."""
+"""Extract GeoJSON from GPKG files."""
 
 import glob
 import logging
