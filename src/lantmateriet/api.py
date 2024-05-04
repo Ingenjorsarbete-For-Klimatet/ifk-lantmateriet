@@ -49,7 +49,7 @@ def get_request(url: str) -> requests.Response:
 class Lantmateriet:
     """Lantmäteriet class."""
 
-    def __init__(self, order_id: str, save_path: Optional[str] = None):
+    def __init__(self, order_id: str, save_path: str):
         """Initialise Lantmäteriet.
 
         Args:

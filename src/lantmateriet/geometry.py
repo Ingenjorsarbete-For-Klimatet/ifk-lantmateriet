@@ -3,7 +3,7 @@
 import os
 from copy import deepcopy
 from os import path
-from typing import Union
+from typing import Optional, Union
 
 import geopandas as gpd
 from lantmateriet import config
@@ -239,16 +239,14 @@ class Geometry:
         self._layer = layer
         self._name = name
         self._field = field
-        self.df = None
 
-        if name not in self.config.exclude:
-            self.df = gpd.read_file(
-                file_path,
-                layer=layer,
-                where=f"{field}='{name}'",
-                engine="pyogrio",
-                use_arrow=True,
-            )
+        self.df = gpd.read_file(
+            file_path,
+            layer=layer,
+            where=f"{field}='{name}'",
+            engine="pyogrio",
+            use_arrow=True,
+        )
 
     @staticmethod
     def _set_area(df: gpd.GeoDataFrame) -> gpd.GeoDataFrame:

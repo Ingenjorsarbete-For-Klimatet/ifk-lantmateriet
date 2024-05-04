@@ -3,7 +3,7 @@
 import glob
 import logging
 from pathlib import Path
-from typing import TypeVar
+from typing import Union
 
 import fiona
 import pandas as pd
@@ -15,9 +15,7 @@ from lantmateriet.polygon import Polygon
 from lantmateriet.utils import normalise_item_names, read_first_entry, read_unique_names
 from ray.util.multiprocessing import Pool
 
-Geometry = TypeVar("Geometry", Line, Polygon, Point)
-
-file_geometry_mapping: dict[str, Geometry] = {
+file_geometry_mapping: dict[shapely.Geometry, Union[Line, Polygon, Point]] = {
     shapely.Point: Point,
     shapely.MultiPoint: Point,
     shapely.MultiLineString: Line,
@@ -77,6 +75,7 @@ def extract_geojson(file: str, layer: str):
         all_geo = [
             (geometry_object(file, "50", layer, name, field), output_name)
             for name, output_name in normalised_names.items()
+            if name not in config_50.exclude
         ]
         processed_geo_objects = pool.starmap(parallel_process, all_geo)
 
