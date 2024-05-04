@@ -26,13 +26,9 @@ class Point(Geometry):
         super().__init__(file_path, detail_level, layer, name, field)
         self.dissolve = False
 
-    def process(self, set_length: bool = True) -> None:
-        """Process all communication data items.
-
-        Args:
-            set_length: set length column
-        """
-        self._process(self.dissolve, False, set_length)
+    def process(self) -> None:
+        """Process all communication data items."""
+        self._process(self.dissolve, False, False)
 
     def save(self, save_path: str, file: str) -> None:
         """Save processed communication items in EPSG:4326 as GeoJSON.

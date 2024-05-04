@@ -1,7 +1,6 @@
 """Line integration tests."""
 
 import geopandas as gpd
-import pandas as pd
 from geopandas import testing
 from lantmateriet.line import Line
 
@@ -19,7 +18,12 @@ test_vaglinje_geojson.to_file(
 test_vaglinje_result = gpd.read_file(
     "tests/fixtures/test_integration_communication_vaglinje_result.geojson",
     layer="vaglinje",
+    where="objekttyp='Motorväg'",
+    engine="pyogrio",
     use_arrow=True,
+)
+test_vaglinje_result["objekttypnr"] = test_vaglinje_result["objekttypnr"].astype(
+    "int64"
 )
 
 
@@ -28,13 +32,15 @@ class TestIntegrationLine:
 
     def test_integration_get_buiding_items(self):
         """Integration test of Line process."""
-        communication = Line(
+        line = Line(
             "tests/fixtures/test_integration_communication_vaglinje.gpkg",
             "50",
             "vaglinje",
-            True,
+            "Motorväg",
+            "objekttyp",
         )
-        df = communication.process()
-        df = pd.concat([v for _, v in df.items()], ignore_index=True)
+        line.process()
 
-        testing.assert_geodataframe_equal(df, test_vaglinje_result, check_like=True)
+        testing.assert_geodataframe_equal(
+            line.df, test_vaglinje_result, check_like=True
+        )

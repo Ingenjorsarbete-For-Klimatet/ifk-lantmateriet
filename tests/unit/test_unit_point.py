@@ -20,7 +20,7 @@ class TestUnitPoint:
     def test_unit_point_process(self, mock_geometry, mock_geometry_process):
         """Unit test of Point process method."""
         point = Point("path", "50", "layer", "name", "field")
-        point.process(False)
+        point.process()
         mock_geometry_process.assert_called_once()
 
     @patch("lantmateriet.geometry.Geometry._save")

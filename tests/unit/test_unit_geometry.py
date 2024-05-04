@@ -1,6 +1,6 @@
 """Geometry unit tests."""
 
-from unittest.mock import call, patch, MagicMock
+from unittest.mock import MagicMock, call, patch
 
 import geopandas as gpd
 import numpy as np
