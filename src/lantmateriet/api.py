@@ -3,15 +3,19 @@
 import io
 import json
 import logging
+import os
 import zipfile
 from typing import Optional
+from pathlib import Path
+from tqdm import tqdm
 
 import requests
 
 STATUS_OK = 200
-
+BLOCK_SIZE = 1024
 ORDER_URL = "https://api.lantmateriet.se"
 DOWNLOAD_URL = "https://download-geotorget.lantmateriet.se"
+TOKEN = os.environ["LANTMATERIET_API_TOKEN"]
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +35,8 @@ def get_request(url: str) -> requests.Response:
     """
     logger.debug(f"Fetching from {url}.")
 
-    response = requests.get(url, timeout=200)
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    response = requests.get(url, headers=headers, timeout=200, stream=True)
 
     if response.status_code != STATUS_OK:
         raise requests.exceptions.HTTPError(f"Could not request from {url}.")
@@ -55,32 +60,55 @@ class Lantmateriet:
         download_url = DOWNLOAD_URL + f"/download/{order_id}/files"
         self._save_path = save_path
 
-        self._order = json.loads(get_request(order_url).content)
+        Path(save_path).mkdir(exist_ok=True)
+        self._order_enpoint = json.loads(get_request(order_url).content)
         download = json.loads(get_request(download_url).content)
-        self._download = {item["title"]: item for item in download}
+        self._download_enpoint = {item["title"]: item for item in download}
 
     @property
     def order(self) -> dict[str, str]:
         """Get order information."""
-        return self._order
+        return self._order_enpoint
 
     @property
     def available_files(self) -> list[str]:
         """Get available files."""
-        return list(self._download.keys())
+        return list(self._download_enpoint.keys())
 
-    def download(self, title: str) -> io.BytesIO:
+    def download(self, title: str) -> None:
         """Download file by title.
 
         Args:
             title: title of file to download
-
-        Returns:
-            bytes io
         """
         logger.info(f"Started downloading {title}")
-        url = self._download[title]["href"]
-        content = get_request(url).content
-        zip = zipfile.ZipFile(io.BytesIO(content))
-        zip.extractall(self._save_path)
+
+        url = self._download_enpoint[title]["href"]
+        response = get_request(url)
+        buffer = self._download(response)
+        self._unzip(buffer)
+
         logger.info(f"Downloaded and unpacked {title} to {self._save_path}")
+
+    def _download(self, response: requests.Response) -> io.BytesIO:
+        """Download file from url."""
+        file_size = int(response.headers.get("Content-Length", 0))
+        buffer = io.BytesIO()
+        with tqdm.wrapattr(
+            response.raw, "read", total=file_size, desc="Downloading"
+        ) as r_raw:
+            while True:
+                chunk = buffer.write(r_raw.read(BLOCK_SIZE))
+                if not chunk:
+                    break
+
+        return buffer
+
+    def _unzip(self, response: io.BytesIO):
+        """Extract zip and save to disk."""
+        with zipfile.ZipFile(response) as zip:
+            for member in tqdm(zip.infolist(), desc="Extracting"):
+                try:
+                    zip.extract(member, self._save_path)
+                except zipfile.error:
+                    logger.error("Can't unzip {member}.")
