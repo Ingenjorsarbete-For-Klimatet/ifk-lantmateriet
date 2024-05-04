@@ -1,9 +1,9 @@
-"""Communication integration tests."""
+"""Line integration tests."""
 
 import geopandas as gpd
 import pandas as pd
 from geopandas import testing
-from lantmateriet.line import Communication
+from lantmateriet.line import Line
 
 test_vaglinje_geojson = gpd.read_file(
     "tests/fixtures/test_integration_communication_vaglinje.geojson",
@@ -23,12 +23,12 @@ test_vaglinje_result = gpd.read_file(
 )
 
 
-class TestIntegrationCommunication:
-    """Integration test of Communication."""
+class TestIntegrationLine:
+    """Integration test of Line."""
 
     def test_integration_get_buiding_items(self):
-        """Integration test of Communication process."""
-        communication = Communication(
+        """Integration test of Line process."""
+        communication = Line(
             "tests/fixtures/test_integration_communication_vaglinje.gpkg",
             "50",
             "vaglinje",

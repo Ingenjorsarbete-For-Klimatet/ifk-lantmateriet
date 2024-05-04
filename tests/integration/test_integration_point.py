@@ -1,9 +1,9 @@
-"""Construction integration tests."""
+"""Point integration tests."""
 
 import geopandas as gpd
 import pandas as pd
 from geopandas import testing
-from lantmateriet.construction import Construction
+from lantmateriet.point import Point
 
 test_byggnad_geojson = gpd.read_file(
     "tests/fixtures/test_integration_construction_byggnad.geojson",
@@ -23,12 +23,12 @@ test_byggnad_result = gpd.read_file(
 )
 
 
-class TestIntegrationConstruction:
-    """Integration test of Construction."""
+class TestIntegrationPoint:
+    """Integration test of Point."""
 
     def test_integration_get_buiding_items(self):
-        """Integration test of Construction process."""
-        construction = Construction(
+        """Integration test of Point process."""
+        construction = Point(
             "tests/fixtures/test_integration_construction_byggnad.gpkg",
             "50",
             "byggnad",

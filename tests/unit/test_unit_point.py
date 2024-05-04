@@ -1,15 +1,15 @@
-"""Construction unit tests."""
+"""Point unit tests."""
 
 from unittest.mock import patch
 
 import geopandas as gpd
 import pytest
 from lantmateriet import config
-from lantmateriet.construction import Construction
+from lantmateriet.point import Point
 
 
-class TestUnitConstruction:
-    """Unit tests of Construction."""
+class TestUnitPoint:
+    """Unit tests of Point."""
 
     @pytest.mark.parametrize(
         "file_name, detail_level, layer, use_arrow, df, expected_result",
@@ -57,7 +57,7 @@ class TestUnitConstruction:
         df,
         expected_result,
     ):
-        """Unit test of Construction __init__ method.
+        """Unit test of Point __init__ method.
 
         Args;
             mock_gpd_read_file: mock of gpd read_file
@@ -71,26 +71,26 @@ class TestUnitConstruction:
         mock_gpd_read_file.return_value = df
         if expected_result is None:
             with pytest.raises(KeyError):
-                construction = Construction(file_name, detail_level, layer, use_arrow)
+                construction = Point(file_name, detail_level, layer, use_arrow)
         else:
-            construction = Construction(file_name, detail_level, layer, use_arrow)
+            construction = Point(file_name, detail_level, layer, use_arrow)
             mock_gpd_read_file.assert_called_with(
                 file_name, layer=layer, use_arrow=use_arrow
             )
             assert construction.config == expected_result
 
-    @patch("lantmateriet.construction.Construction._process")
-    @patch("lantmateriet.construction.Construction.__init__", return_value=None)
+    @patch("lantmateriet.construction.Point._process")
+    @patch("lantmateriet.construction.Point.__init__", return_value=None)
     def test_unit_construction_process(
         self, mock_construction_init, mock_construction_process
     ):
-        """Unit test of Construction process method.
+        """Unit test of Point process method.
 
         Args:
-            mock_construction_init: mock of Construction __init__
-            mock_construction_process: mock of Construction _process
+            mock_construction_init: mock of Point __init__
+            mock_construction_process: mock of Point _process
         """
-        construction = Construction("path")
+        construction = Point("path")
         construction.item_type = "construction"
         construction.layer = "byggnad"
         construction.dissolve = True
@@ -100,18 +100,18 @@ class TestUnitConstruction:
             "construction", "byggnad", True, True, True
         )
 
-    @patch("lantmateriet.construction.Construction._save")
-    @patch("lantmateriet.construction.Construction.__init__", return_value=None)
+    @patch("lantmateriet.construction.Point._save")
+    @patch("lantmateriet.construction.Point.__init__", return_value=None)
     def test_unit_construction_save(
         self, mock_construction_init, mock_construction_save
     ):
         """Unit test of construction save method.
 
         Args:
-            mock_construction_init: mock of Construction __init__
-            mock_construction_save: mock of Construction _save
+            mock_construction_init: mock of Point __init__
+            mock_construction_save: mock of Point _save
         """
-        construction = Construction("path")
+        construction = Point("path")
         construction.item_type = "construction"
         construction.layer = "byggnad"
 

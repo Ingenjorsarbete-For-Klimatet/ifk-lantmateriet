@@ -1,16 +1,16 @@
-"""Ground unit tests."""
+"""Polygon unit tests."""
 
 from unittest.mock import patch
 
 import geopandas as gpd
 import pytest
 from lantmateriet import config
-from lantmateriet.polygon import Ground
+from lantmateriet.polygon import Polygon
 from shapely.geometry import Point
 
 
-class TestUnitGround:
-    """Unit tests of Ground."""
+class TestUnitPolygon:
+    """Unit tests of Polygon."""
 
     @pytest.mark.parametrize(
         "file_name, detail_level, layer, use_arrow, df, expected_result",
@@ -54,7 +54,7 @@ class TestUnitGround:
         df,
         expected_result,
     ):
-        """Unit test of Ground __init__ method.
+        """Unit test of Polygon __init__ method.
 
         Args;
             mcck_gpd_read_file: mock of gpd read_file
@@ -68,31 +68,31 @@ class TestUnitGround:
         mcck_gpd_read_file.return_value = df
         if expected_result is None:
             with pytest.raises(KeyError):
-                ground = Ground(file_name, detail_level, layer, use_arrow)
+                ground = Polygon(file_name, detail_level, layer, use_arrow)
         else:
-            ground = Ground(file_name, detail_level, layer, use_arrow)
+            ground = Polygon(file_name, detail_level, layer, use_arrow)
             mcck_gpd_read_file.assert_called_with(
                 file_name, layer=layer, use_arrow=use_arrow
             )
             assert ground.config == expected_result
 
     @patch(
-        "lantmateriet.ground.Ground._process",
+        "lantmateriet.ground.Polygon._process",
         return_value={
             "Sverige": gpd.GeoDataFrame(
                 {"geometry": [Point(0, 0), Point(0, 1)], "objekttyp": "Sverige"}
             )
         },
     )
-    @patch("lantmateriet.ground.Ground.__init__", return_value=None)
+    @patch("lantmateriet.ground.Polygon.__init__", return_value=None)
     def test_unit_ground_process(self, mock_ground_init, mock_ground_process):
-        """Unit test of Ground process method.
+        """Unit test of Polygon process method.
 
         Args:
-            mock_ground_init: mock of Ground __init__
-            mock_ground_process: mock of Ground _process
+            mock_ground_init: mock of Polygon __init__
+            mock_ground_process: mock of Polygon _process
         """
-        ground = Ground("path")
+        ground = Polygon("path")
         ground.item_type = "ground"
         ground.layer = "mark"
         ground.dissolve = True
@@ -101,16 +101,16 @@ class TestUnitGround:
         ground.process()
         mock_ground_process.assert_called_once_with("ground", "mark", True, True, True)
 
-    @patch("lantmateriet.ground.Ground._save")
-    @patch("lantmateriet.ground.Ground.__init__", return_value=None)
+    @patch("lantmateriet.ground.Polygon._save")
+    @patch("lantmateriet.ground.Polygon.__init__", return_value=None)
     def test_unit_ground_save(self, mock_ground_init, mock_ground_save):
-        """Unit test of Ground save method.
+        """Unit test of Polygon save method.
 
         Args:
-            mock_ground_init: mock of Ground __init__
-            mock_ground_save: mock of Ground _save
+            mock_ground_init: mock of Polygon __init__
+            mock_ground_save: mock of Polygon _save
         """
-        ground = Ground("path")
+        ground = Polygon("path")
         ground.item_type = "ground"
         ground.layer = "mark"
         ground.config = config.config_50
