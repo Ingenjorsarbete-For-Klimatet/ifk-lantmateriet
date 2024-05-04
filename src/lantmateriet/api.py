@@ -5,11 +5,11 @@ import json
 import logging
 import os
 import zipfile
-from typing import Optional
 from pathlib import Path
-from tqdm import tqdm
+from typing import Optional
 
 import requests
+from tqdm import tqdm
 
 STATUS_OK = 200
 BLOCK_SIZE = 1024
@@ -86,12 +86,21 @@ class Lantmateriet:
         url = self._download_enpoint[title]["href"]
         response = get_request(url)
         buffer = self._download(response)
-        self._unzip(buffer)
+
+        if zipfile.is_zipfile(buffer) is True:
+            self._unzip(buffer)
 
         logger.info(f"Downloaded and unpacked {title} to {self._save_path}")
 
     def _download(self, response: requests.Response) -> io.BytesIO:
-        """Download file from url."""
+        """Download file from url.
+
+        Args:
+            response: requests response object
+
+        Returns:
+            bytesio buffer
+        """
         file_size = int(response.headers.get("Content-Length", 0))
         buffer = io.BytesIO()
         with tqdm.wrapattr(
@@ -104,9 +113,13 @@ class Lantmateriet:
 
         return buffer
 
-    def _unzip(self, response: io.BytesIO):
-        """Extract zip and save to disk."""
-        with zipfile.ZipFile(response) as zip:
+    def _unzip(self, buffer: io.BytesIO):
+        """Extract zip and save to disk.
+
+        Args:
+            buffer: buffer of downloaded content
+        """
+        with zipfile.ZipFile(buffer) as zip:
             for member in tqdm(zip.infolist(), desc="Extracting"):
                 try:
                     zip.extract(member, self._save_path)

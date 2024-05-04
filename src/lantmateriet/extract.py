@@ -2,18 +2,18 @@
 
 import glob
 import logging
+from pathlib import Path
 from typing import TypeVar
 
 import fiona
-import geopandas as gpd
 import pandas as pd
 import shapely
 from lantmateriet.config import Config50, config_50
 from lantmateriet.line import Line
 from lantmateriet.point import Point
 from lantmateriet.polygon import Polygon
+from lantmateriet.utils import normalise_item_names, read_first_entry, read_unique_names
 from ray.util.multiprocessing import Pool
-from unidecode import unidecode
 
 Geometry = TypeVar("Geometry", Line, Polygon, Point)
 
@@ -31,41 +31,6 @@ WORKER_OUTER = 14
 
 logger = logging.getLogger(__name__)
 config = Config50()
-
-
-def read_unique_names(file: str, layer: str, field: str) -> list[str]:
-    """Read unique names from specified field in file."""
-    return sorted(
-        list(
-            set(
-                gpd.read_file(
-                    file,
-                    use_arrow=True,
-                    include_fields=[field],
-                    ignore_geometry=True,
-                    layer=layer,
-                )[field]
-            )
-        )
-    )
-
-
-def read_first_entry(file: str, layer: str) -> gpd.GeoDataFrame:
-    """Read info from file."""
-    return gpd.read_file(file, use_arrow=True, layer=layer, rows=1)
-
-
-def normalise_item_names(item_names: list[str]) -> dict[str, str]:
-    """Normalise item names to save format."""
-    return {
-        x: "{:02d}_".format(i + 1)
-        + unidecode(x.lower())
-        .replace(" ", "_")
-        .replace("-", "")
-        .replace(",", "")
-        .replace("/", "_")
-        for i, x in enumerate(item_names)
-    }
 
 
 def save_sweden_base(processed_geo_objects):
@@ -87,7 +52,7 @@ def parallel_process(geo_object, output_name):
     """Parallel process."""
     if geo_object.df is not None:
         geo_object.process()
-        geo_object.save("tmp", output_name)
+        geo_object.save("tmp2", output_name)
 
         if "mark" in geo_object._file_path:
             return geo_object.df.dissolve().explode(index_parts=False)
@@ -97,7 +62,7 @@ def parallel_process(geo_object, output_name):
 
 def extract_geojson(file: str, layer: str):
     """Extract and save geojson files."""
-    print(f"Working on {file} - {layer}")
+    logger.info(f"Working on {file} - {layer}")
     field = "objekttyp"
 
     if "text" in file or "text" in layer:
@@ -118,12 +83,17 @@ def extract_geojson(file: str, layer: str):
     if "mark" in file:
         save_sweden_base(processed_geo_objects)
 
-    print(f"Saved {file} - {layer}")
+    logger.info(f"Saved {file} - {layer}")
 
 
-def run():
-    """Run extraction."""
-    files = glob.glob("topografi_50/*.gpkg")
+def extract(path: str):
+    """Run extraction of gkpg to geojson.
+
+    Args:
+        path: path to search for gkpg files
+    """
+    file_pattern = str(Path(path) / "*.gpkg")
+    files = glob.glob(file_pattern)
 
     all_files = []
     for file in files:
@@ -133,7 +103,3 @@ def run():
 
     with Pool(WORKER_OUTER) as pool:
         pool.starmap(extract_geojson, all_files)
-
-
-if __name__ == "__main__":
-    run()

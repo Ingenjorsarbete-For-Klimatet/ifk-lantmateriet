@@ -5,6 +5,9 @@ import time
 from functools import wraps
 from typing import Callable
 
+import geopandas as gpd
+from unidecode import unidecode
+
 logger = logging.getLogger(__name__)
 
 
@@ -34,3 +37,38 @@ def timeit(has_key: bool = False):
         return wrap
 
     return timeit_decorator
+
+
+def read_unique_names(file: str, layer: str, field: str) -> list[str]:
+    """Read unique names from specified field in file."""
+    return sorted(
+        list(
+            set(
+                gpd.read_file(
+                    file,
+                    use_arrow=True,
+                    include_fields=[field],
+                    ignore_geometry=True,
+                    layer=layer,
+                )[field]
+            )
+        )
+    )
+
+
+def read_first_entry(file: str, layer: str) -> gpd.GeoDataFrame:
+    """Read info from file."""
+    return gpd.read_file(file, use_arrow=True, layer=layer, rows=1)
+
+
+def normalise_item_names(item_names: list[str]) -> dict[str, str]:
+    """Normalise item names to save format."""
+    return {
+        x: "{:02d}_".format(i + 1)
+        + unidecode(x.lower())
+        .replace(" ", "_")
+        .replace("-", "")
+        .replace(",", "")
+        .replace("/", "_")
+        for i, x in enumerate(item_names)
+    }
