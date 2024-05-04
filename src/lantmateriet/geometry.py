@@ -3,7 +3,7 @@
 import os
 from copy import deepcopy
 from os import path
-from typing import Optional, Union
+from typing import Union
 
 import geopandas as gpd
 from lantmateriet import config
