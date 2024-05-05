@@ -20,8 +20,9 @@ def extract_choropleth(all_files: list[Path]):
 
 
 def get_municipalities_choropleth(administrative_path: str, scb_path: str):
+    """Get municipalities choropleth."""
     admin = Path(administrative_path)
-    scb = Path(scb_path)
+    _ = Path(scb_path)
 
     all_files = [
         admin / "04_riksgrans.geojson",
@@ -34,8 +35,9 @@ def get_municipalities_choropleth(administrative_path: str, scb_path: str):
 
 
 def get_regions_choropleth(administrative_path: str, scb_path: str):
+    """Get regions choropleth."""
     admin = Path(administrative_path)
-    scb = Path(scb_path)
+    _ = Path(scb_path)
 
     all_files = [
         admin / "04_riksgrans.geojson",
