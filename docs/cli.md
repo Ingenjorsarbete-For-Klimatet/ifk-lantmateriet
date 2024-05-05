@@ -26,8 +26,9 @@ ifk-lantmateriet download-all 11a2ab333-1234-12ab-12a3-1a2bce3d45ef save_path
 
 ### Extract all
 
-Example of extracting located in a folder called `save_path`
+Example of extracting located in a folder called `sourch_path` to
+a folder called `target_path`
 
 ```bash
-ifk-lantmateriet extract-all save_path
+ifk-lantmateriet extract-all sourch_path target_path
 ```
