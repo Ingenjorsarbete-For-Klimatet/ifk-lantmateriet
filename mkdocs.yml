@@ -5,10 +5,12 @@ site_url: https://ingenjorsarbete-for-klimatet.github.io/ifk-lantmateriet/
 repo_name: Ingenjorsarbete-For-Klimatet/ifk-lantmateriet
 
 nav:
-- Home: index.md
+  - Home: index.md
+  - API: api.md
+  - CLI: cli.md
 
 watch:
-- src
+  - src
 
 theme:
   name: material
@@ -26,10 +28,11 @@ theme:
     - navigation.tabs
 
 plugins:
-- search
-- mkdocstrings
+  - search
+  - mkdocstrings
 
 markdown_extensions:
+  - attr_list
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
