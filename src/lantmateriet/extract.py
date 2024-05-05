@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 config = Config50()
 
 
-def save_sweden_base(processed_geo_objects):
+def save_sweden_base(target_path, processed_geo_objects):
     """Save sweden base from all dissolved ground."""
     df_sverige = (
         pd.concat([item for item in processed_geo_objects])
@@ -42,15 +42,15 @@ def save_sweden_base(processed_geo_objects):
     df_sverige["length_m"] = df_sverige.length
     df_sverige = df_sverige.to_crs(config_50.epsg_4326)
     df_sverige.to_file(
-        "tmp/mark_sverige/mark/00_sverige" + ".geojson", driver="GeoJSON"
+        f"{target_path}/mark_sverige/mark/00_sverige" + ".geojson", driver="GeoJSON"
     )
 
 
-def parallel_process(geo_object, output_name):
+def parallel_process(geo_object, target_path, output_name):
     """Parallel process."""
     if geo_object.df is not None:
         geo_object.process()
-        geo_object.save("tmp2", output_name)
+        geo_object.save(target_path, output_name)
 
         if "mark" in geo_object._file_path:
             return geo_object.df.dissolve().explode(index_parts=False)
@@ -58,7 +58,7 @@ def parallel_process(geo_object, output_name):
     return None
 
 
-def extract_geojson(file: str, layer: str):
+def extract_geojson(target_path: str, file: str, layer: str):
     """Extract and save geojson files."""
     logger.info(f"Working on {file} - {layer}")
     field = "objekttyp"
@@ -73,32 +73,33 @@ def extract_geojson(file: str, layer: str):
 
     with Pool(WORKER_INNER) as pool:
         all_geo = [
-            (geometry_object(file, "50", layer, name, field), output_name)
+            (geometry_object(file, "50", layer, name, field), target_path, output_name)
             for name, output_name in normalised_names.items()
             if name not in config_50.exclude
         ]
         processed_geo_objects = pool.starmap(parallel_process, all_geo)
 
     if "mark" in file:
-        save_sweden_base(processed_geo_objects)
+        save_sweden_base(target_path, processed_geo_objects)
 
     logger.info(f"Saved {file} - {layer}")
 
 
-def extract(path: str):
+def extract(source_path: str, target_path):
     """Run extraction of gkpg to geojson.
 
     Args:
-        path: path to search for gkpg files
+        source_path: path to search for files
+        target_path: path to save extracted files to
     """
-    file_pattern = str(Path(path) / "*.gpkg")
+    file_pattern = str(Path(source_path) / "*.gpkg")
     files = glob.glob(file_pattern)
 
     all_files = []
     for file in files:
         available_layers = fiona.listlayers(file)
         for layer in available_layers:
-            all_files.append((file, layer))
+            all_files.append((target_path, file, layer))
 
     with Pool(WORKER_OUTER) as pool:
         pool.starmap(extract_geojson, all_files)

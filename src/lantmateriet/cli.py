@@ -28,10 +28,11 @@ def download_all(order_id: str, save_path: str):
 
 
 @app.command()
-def extract_all(path: str):
+def extract_all(source_path: str, target_path):
     """Extract geojson from gpkg files.
 
     Args:
-        path: path to search for files
+        source_path: path to search for files
+        target_path: path to save extracted files to
     """
-    extract(path)
+    extract(source_path, target_path)
