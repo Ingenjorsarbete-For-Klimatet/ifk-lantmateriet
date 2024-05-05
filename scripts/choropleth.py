@@ -24,6 +24,7 @@ kommuns = ops.linemerge(
     geometry.MultiLineString(
         sjograns.geometry.to_list()
         + riksgrans.geometry.to_list()
+        + lansgrans.geometry.to_list()
         + kommungrans.geometry.to_list()
     )
 )
