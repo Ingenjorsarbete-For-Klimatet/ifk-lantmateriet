@@ -13,7 +13,7 @@ Users can
 
 In order to access the API a token must be generated from
 [here](https://apimanager.lantmateriet.se){target="\_blank"} and
-set as en environment variable
+set as an environment variable
 
 ```bash
 export LANTMATERIET_API_TOKEN=...
