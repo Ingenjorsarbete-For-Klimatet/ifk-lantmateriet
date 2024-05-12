@@ -3,9 +3,10 @@
 import glob
 import logging
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 
 import fiona
+import geopandas as gpd
 import pandas as pd
 import shapely
 from lantmateriet.config import Config50, config_50
@@ -31,7 +32,7 @@ logger = logging.getLogger(__name__)
 config = Config50()
 
 
-def save_sweden_base(target_path, processed_geo_objects):
+def save_sweden_base(target_path, processed_geo_objects) -> None:
     """Save sweden base from all dissolved ground."""
     df_sverige = (
         pd.concat([item for item in processed_geo_objects])
@@ -46,7 +47,9 @@ def save_sweden_base(target_path, processed_geo_objects):
     )
 
 
-def parallel_process(geo_object, target_path, output_name):
+def parallel_process(
+    geo_object, target_path, output_name
+) -> Optional[gpd.GeoDataFrame]:
     """Parallel process."""
     if geo_object.df is not None:
         geo_object.process()
@@ -58,7 +61,7 @@ def parallel_process(geo_object, target_path, output_name):
     return None
 
 
-def extract_geojson(target_path: str, file: str, layer: str):
+def extract_geojson(target_path: str, file: str, layer: str) -> None:
     """Extract and save geojson files."""
     logger.info(f"Working on {file} - {layer}")
     field = "objekttyp"
@@ -85,7 +88,7 @@ def extract_geojson(target_path: str, file: str, layer: str):
     logger.info(f"Saved {file} - {layer}")
 
 
-def extract(source_path: str, target_path):
+def extract(source_path: str, target_path) -> None:
     """Run extraction of gkpg to geojson.
 
     Args:
