@@ -12,6 +12,7 @@ from tqdm import tqdm
 
 STATUS_OK = 200
 BLOCK_SIZE = 1024
+REQUEST_TIMEOUT = 200
 ORDER_URL = "https://api.lantmateriet.se"
 DOWNLOAD_URL = "https://download-geotorget.lantmateriet.se"
 TOKEN = os.environ["LANTMATERIET_API_TOKEN"]
@@ -35,7 +36,7 @@ def get_request(url: str) -> requests.Response:
     logger.debug(f"Fetching from {url}.")
 
     headers = {"Authorization": f"Bearer {TOKEN}"}
-    response = requests.get(url, headers=headers, timeout=200, stream=True)
+    response = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT, stream=True)
 
     if response.status_code != STATUS_OK:
         raise requests.exceptions.HTTPError(f"Could not request from {url}.")
