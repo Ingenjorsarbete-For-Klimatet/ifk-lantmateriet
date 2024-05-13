@@ -11,7 +11,7 @@ readme = "README.md"
 authors = [
     { name = "Mladen Gibanica", email = "11275336+mgcth@users.noreply.github.com" },
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10,<3.12"
 dependencies = [
     "geopandas ~= 0.14",
     "pyogrio ~= 0.7",
