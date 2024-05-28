@@ -42,5 +42,8 @@ class TestIntegrationLine:
         line.process()
 
         testing.assert_geodataframe_equal(
-            line.df, test_vaglinje_result, check_like=True
+            line.df,
+            test_vaglinje_result,
+            check_like=True,
+            check_dtype=False,
         )

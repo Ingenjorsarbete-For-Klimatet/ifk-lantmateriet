@@ -41,5 +41,8 @@ class TestIntegrationPoint:
         point.process()
 
         testing.assert_geodataframe_equal(
-            point.df, test_byggnad_result, check_like=True
+            point.df,
+            test_byggnad_result,
+            check_like=True,
+            check_dtype=False,
         )

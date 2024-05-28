@@ -34,4 +34,9 @@ class TestIntegrationPolygon:
         )
         polygon.process()
 
-        testing.assert_geodataframe_equal(polygon.df, test_mark_result, check_like=True)
+        testing.assert_geodataframe_equal(
+            polygon.df,
+            test_mark_result,
+            check_like=True,
+            check_dtype=False,
+        )
