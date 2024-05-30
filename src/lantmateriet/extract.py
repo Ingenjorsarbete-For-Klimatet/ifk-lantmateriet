@@ -9,7 +9,7 @@ import fiona
 import geopandas as gpd
 import pandas as pd
 import shapely
-from lantmateriet.config import Config50, config_50
+from lantmateriet.config import config_50
 from lantmateriet.line import Line
 from lantmateriet.point import Point
 from lantmateriet.polygon import Polygon
@@ -25,11 +25,10 @@ file_geometry_mapping: dict[shapely.Geometry, Union[Line, Polygon, Point]] = {
     shapely.MultiPolygon: Polygon,
 }
 
-WORKER_INNER = 8
-WORKER_OUTER = 14
+WORKER_INNER = 3
+WORKER_OUTER = 6
 
 logger = logging.getLogger(__name__)
-config = Config50()
 
 
 def save_sweden_base(target_path, processed_geo_objects) -> None:
