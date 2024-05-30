@@ -62,8 +62,10 @@ class Lantmateriet:
 
         Path(save_path).mkdir(exist_ok=True)
         self._order_enpoint = json.loads(get_request(order_url).content)
-        download = json.loads(get_request(download_url).content)
-        self._download_enpoint = {item["title"]: item for item in download}
+        available_files = json.loads(get_request(download_url).content)
+        self._available_files_enpoint = {
+            item["title"]: item for item in available_files
+        }
 
     @property
     def order(self) -> dict[str, str]:
@@ -73,7 +75,7 @@ class Lantmateriet:
     @property
     def available_files(self) -> list[str]:
         """Get available files."""
-        return list(self._download_enpoint.keys())
+        return list(self._available_files_enpoint.keys())
 
     def download(self, title: str) -> None:
         """Download file by title.
@@ -83,7 +85,7 @@ class Lantmateriet:
         """
         logger.info(f"Started downloading {title}")
 
-        url = self._download_enpoint[title]["href"]
+        url = self._available_files_enpoint[title]["href"]
         response = get_request(url)
         buffer = self._download(response)
 
