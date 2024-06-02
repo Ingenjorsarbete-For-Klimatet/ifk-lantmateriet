@@ -10,6 +10,7 @@ import geopandas as gpd
 import pandas as pd
 import shapely
 from lantmateriet.config import config_50
+from lantmateriet.geometry import Geometry
 from lantmateriet.line import Line
 from lantmateriet.point import Point
 from lantmateriet.polygon import Polygon
@@ -31,8 +32,13 @@ WORKER_OUTER = 6
 logger = logging.getLogger(__name__)
 
 
-def save_sweden_base(target_path, processed_geo_objects) -> None:
-    """Save sweden base from all dissolved ground."""
+def save_sweden_base(target_path: str, processed_geo_objects: Geometry) -> None:
+    """Save sweden base from all dissolved ground.
+
+    Args:
+        target_path: save path of object
+        processed_geo_objects: geometry objects
+    """
     df_sverige = (
         pd.concat([item for item in processed_geo_objects])
         .dissolve()
@@ -47,9 +53,18 @@ def save_sweden_base(target_path, processed_geo_objects) -> None:
 
 
 def parallel_process(
-    geo_object, target_path, output_name
+    geo_object: Geometry, target_path: str, output_name: str
 ) -> Optional[gpd.GeoDataFrame]:
-    """Parallel process."""
+    """Parallel process.
+
+    Args:
+        geo_object: geometry object
+        target_path: save path of object
+        output_name: name of object to save
+
+    Returns:
+        processed geodataframe
+    """
     if geo_object.df is not None:
         geo_object.process()
         geo_object.save(target_path, output_name)
@@ -61,7 +76,13 @@ def parallel_process(
 
 
 def extract_geojson(target_path: str, file: str, layer: str) -> None:
-    """Extract and save geojson files."""
+    """Extract and save geojson files.
+
+    Args:
+        target_path: path to load from
+        file: file to load
+        layer: layer to load from file
+    """
     logger.info(f"Working on {file} - {layer}")
     field = "objekttyp"
 
@@ -87,7 +108,7 @@ def extract_geojson(target_path: str, file: str, layer: str) -> None:
     logger.info(f"Saved {file} - {layer}")
 
 
-def extract(source_path: str, target_path) -> None:
+def extract(source_path: str, target_path: str) -> None:
     """Run extraction of gkpg to geojson.
 
     Args:
