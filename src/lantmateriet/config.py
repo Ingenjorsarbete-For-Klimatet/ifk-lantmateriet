@@ -6,7 +6,10 @@ Configuration taken from
 - 50: https://www.lantmateriet.se/globalassets/geodata/geodataprodukter/pb-topografi-50-nedladdning-vektor.pdf
 """
 
+from dataclasses import dataclass
 
+
+@dataclass
 class BaseConfig:
     """Base config class."""
 
