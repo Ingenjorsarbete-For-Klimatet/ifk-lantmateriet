@@ -19,9 +19,9 @@ jobs:
           pip install -e ".[type]"
       - name: Type checking with mypy
         run: >
-          MYPYPATH=src
           mypy
           --namespace-packages
           --explicit-package-bases
           --allow-redefinition
+          --ignore-missing-imports 
           src

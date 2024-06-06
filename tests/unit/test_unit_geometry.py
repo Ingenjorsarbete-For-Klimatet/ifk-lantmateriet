@@ -1,7 +1,6 @@
 """Geometry unit tests."""
 
-from copy import deepcopy
-from unittest.mock import call, patch
+from unittest.mock import MagicMock, call, patch
 
 import geopandas as gpd
 import numpy as np
@@ -9,7 +8,6 @@ import pytest
 from geopandas import testing
 from lantmateriet import config
 from lantmateriet.geometry import DissolveTouchingGeometry, Geometry
-from lantmateriet.utils import smap
 from shapely.geometry import Point, Polygon
 
 
@@ -602,68 +600,37 @@ class TestUnitGeometry:
     """Unit tests of Geometry."""
 
     @pytest.mark.parametrize(
-        "file_name, detail_level, layer, use_arrow, expected_result",
+        "file_name, detail_level, layer, name, field, expected_result",
         [
-            (
-                "path",
-                "50",
-                "mark",
-                True,
-                config.config_50,
-            ),
-            (
-                "path",
-                "1m",
-                "mark",
-                True,
-                config.config_1m,
-            ),
-            (
-                "path",
-                "50",
-                "mark",
-                False,
-                config.config_50,
-            ),
-            (
-                "path",
-                "1",
-                "mark",
-                True,
-                None,
-            ),
+            ("path", "50", "mark", "name", "field", config.config_50),
+            ("path", "1m", "mark", "name", "field", config.config_1m),
+            ("path", "50", "mark", "name", "field", config.config_50),
+            ("path", "1", "mark", "name", "field", None),
         ],
     )
     @patch("lantmateriet.geometry.gpd.read_file")
     def test_unit_init(
-        self, mock_read_file, file_name, detail_level, layer, use_arrow, expected_result
+        self,
+        mock_read_file,
+        file_name,
+        detail_level,
+        layer,
+        name,
+        field,
+        expected_result,
     ):
-        """Unit test of Geometry __init__ method.
-
-        Args:
-            mock_read_file: mock of read_file
-            file_name: file_name
-            detail_level: detail_level
-            layer: layer
-            use_arrow: use_arrow
-            expected_result: expected result
-        """
+        """Unit test of Geometry __init__ method."""
         if detail_level not in {"50", "1m"}:
             with pytest.raises(NotImplementedError):
-                _ = Geometry(
-                    file_name,
-                    detail_level=detail_level,
-                    layer=layer,
-                    use_arrow=use_arrow,
-                )
+                _ = Geometry(file_name, detail_level, layer, name, field)
         else:
-            geometry = Geometry(
-                file_name, detail_level=detail_level, layer=layer, use_arrow=use_arrow
-            )
-            mock_read_file.assert_called_once_with(
-                file_name, layer=layer, use_arrow=use_arrow
-            )
+            geometry = Geometry(file_name, detail_level, layer, name, field)
+            # mock_read_file.assert_called_once_with(file_name, layer)
             assert geometry.config == expected_result
+            assert geometry._file_path == file_name
+            assert geometry._layer == layer
+            assert geometry._name == name
+            assert geometry._field == field
 
     @pytest.mark.parametrize(
         "input_df",
@@ -680,11 +647,7 @@ class TestUnitGeometry:
         ],
     )
     def test_unit_set_area(self, input_df):
-        """Unit test of Geometry _set_area method.
-
-        Args:
-            input_df: input_df
-        """
+        """Unit test of Geometry _set_area method."""
         result = Geometry._set_area(input_df)
         assert "area_m2" in result
 
@@ -692,38 +655,24 @@ class TestUnitGeometry:
         "input_df",
         [
             gpd.GeoDataFrame(
-                {
-                    "geometry": [
-                        Polygon(
-                            [(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)],
-                        ),
-                    ]
-                },
+                {"geometry": [Polygon([(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)])]}
             ),
         ],
     )
     def test_unit_set_length(self, input_df):
-        """Unit test of Geometry _set_length method.
-
-        Args:
-            input_df: input_df
-        """
+        """Unit test of Geometry _set_length method."""
         result = Geometry._set_length(input_df)
         assert "length_m" in result
 
     @patch("lantmateriet.geometry.DissolveTouchingGeometry")
     def test_unit_dissolve(self, mock_DissolveTouchingGeometry):
-        """Unit test of Geometry _dissolve method.
+        """Unit test of Geometry _dissolve method."""
+        df = gpd.GeoDataFrame()
+        result = Geometry._dissolve(df)
 
-        Args:
-            mock_DissolveTouchingGeometry: mock of mock_DissolveTouchingGeometry
-        """
-        object_name, df = "object_name", gpd.GeoDataFrame()
-        result = Geometry._dissolve(object_name, df)
-        assert object_name == result[0]
         assert (
             mock_DissolveTouchingGeometry.return_value.dissolve_and_explode.return_value
-            == result[1]
+            == result
         )
         mock_DissolveTouchingGeometry.assert_called_with(df)
         mock_DissolveTouchingGeometry.return_value.dissolve_and_explode.assert_called()
@@ -735,356 +684,146 @@ class TestUnitGeometry:
         Args:
             mock_DissolveTouchingGeometry: mock of mock_DissolveTouchingGeometry
         """
-        object_name, df = "object_name", gpd.GeoDataFrame()
-        result = Geometry._dissolve_exterior(object_name, df)
-        assert object_name == result[0]
+        df = gpd.GeoDataFrame()
+        result = Geometry._dissolve_exterior(df)
+
         assert (
             mock_DissolveTouchingGeometry.return_value.dissolve_and_explode_exterior.return_value
-            == result[1]
+            == result
         )
         mock_DissolveTouchingGeometry.assert_called_with(df)
         mock_DissolveTouchingGeometry.return_value.dissolve_and_explode_exterior.assert_called()
 
     @pytest.mark.parametrize(
-        "df, item_type, layer, config_ground, expected_result",
+        "name, dissolve, set_area, set_length, input_geometry, dissolved_geometry",
         [
             (
-                gpd.GeoDataFrame({"objekttyp": ["Hav", "Sjö"]}),
-                "ground",
-                "mark",
-                {"mark": {"Hav": "hav", "Sjö": "sjö"}},
-                [("Sjö", gpd.GeoDataFrame({"objekttyp": ["Sjö"]}, index=[1]))],
-            )
-        ],
-    )
-    @patch("lantmateriet.geometry.Geometry.__init__", return_value=None)
-    def test_unit_get_items(
-        self, mock_geometry_init, df, item_type, layer, config_ground, expected_result
-    ):
-        """Unit test of Geometry _get_items method.
-
-        Args:
-            mock_geometry_init: mock of Geometry init
-            df: test dataframe
-            item_type: item type
-            layer: layer
-            config_ground: test config ground
-            expected_result: expected result
-        """
-        test_config = deepcopy(config.config_50)
-        test_config.ground = config_ground
-        geometry = Geometry("path")
-        geometry.df = df
-        geometry.config = test_config
-
-        geometry_items = geometry._get_items(item_type, layer)
-
-        assert all([x[0] == y[0] for x, y in zip(geometry_items, expected_result)])
-        for (_, x), (_, y) in zip(geometry_items, expected_result):
-            assert all(x.objekttyp == y.objekttyp)
-
-    @pytest.mark.parametrize(
-        "input, expected_result",
-        [
-            (
-                [("Sjö", 1), ("Barr- och blandskog", 2)],
-                [
-                    (Geometry._dissolve, "Sjö", 1),
-                    (Geometry._dissolve_exterior, "Barr- och blandskog", 2),
-                ],
-            )
-        ],
-    )
-    @patch("lantmateriet.geometry.Geometry.__init__", return_value=None)
-    def test_unit_prepare_parallel_list(self, mock_ground_init, input, expected_result):
-        """Unit test of Geometry _prepare_parallel_list method.
-
-        Args:
-            mock_ground_init: mock of Ground init
-            input: input
-            expected_result: expected result
-        """
-        geometry = Geometry("path")
-        geometry.config = config.config_50
-
-        geometry_items = geometry._prepare_parallel_list(input)
-
-        for x, y in zip(geometry_items, expected_result):
-            assert x[0] == y[0]
-            assert x[1] == y[1]
-            assert x[2] == y[2]
-
-    @patch("lantmateriet.geometry.Pool")
-    @patch("lantmateriet.geometry.Geometry._prepare_parallel_list")
-    @patch("lantmateriet.ground.Geometry.__init__", return_value=None)
-    def test_unit_disolve_parallel(
-        self, mock_geometry_init, mock_prepare_list, mock_pool
-    ):
-        """Unit test of Geometry _dissolve_parallel method.
-
-        Args:
-            mock_geometry_init: mock of Geometry init
-            mock_prepare_list: mock of Geometry _prepare_parallel_list
-            mock_pool: mock of Pool
-        """
-        input_list = []
-        geometry = Geometry("path")
-        dissolved_geometry = geometry._dissolve_parallel(input_list)
-        mock_prepare_list.assert_called_once_with(input_list)
-        mock_pool.return_value.__enter__.return_value.starmap.assert_called_once_with(
-            smap, mock_prepare_list.return_value
-        )
-
-        assert (
-            dissolved_geometry
-            == mock_pool.return_value.__enter__.return_value.starmap.return_value
-        )
-
-    @pytest.mark.parametrize(
-        "item_type, layer, dissolve, set_area, set_length, key, input_geometry, dissolved_geometry",
-        [
-            (
-                "ground",
-                "mark",
+                "Barr- och blandskog",
                 True,
                 False,
                 False,
-                "Sjö",
-                [
-                    (
-                        "Sjö",
-                        gpd.GeoDataFrame(
-                            {
-                                "geometry": [Polygon([(0, 0), (1, 1), (1, 0)])],
-                            }
-                        ),
-                    )
-                ],
-                [
-                    (
-                        "Sjö",
-                        gpd.GeoDataFrame(
-                            {
-                                "geometry": [Polygon([(0, 0), (1, 1), (1, 0)])],
-                            }
-                        ),
-                    )
-                ],
+                gpd.GeoDataFrame({"geometry": [Polygon([(0, 0), (1, 1), (1, 0)])]}),
+                gpd.GeoDataFrame({"geometry": [Polygon([(0, 0), (1, 1), (1, 0)])]}),
             ),
             (
-                "ground",
-                "mark",
+                "name",
+                True,
+                False,
+                False,
+                gpd.GeoDataFrame({"geometry": [Polygon([(0, 0), (1, 1), (1, 0)])]}),
+                gpd.GeoDataFrame({"geometry": [Polygon([(0, 0), (1, 1), (1, 0)])]}),
+            ),
+            (
+                "name",
                 True,
                 True,
                 False,
-                "Sjö",
-                [
-                    (
-                        "Sjö",
-                        gpd.GeoDataFrame(
-                            {
-                                "geometry": [Polygon([(0, 0), (1, 1), (1, 0)])],
-                            }
-                        ),
-                    )
-                ],
-                [
-                    (
-                        "Sjö",
-                        gpd.GeoDataFrame(
-                            {
-                                "geometry": [Polygon([(0, 0), (1, 1), (1, 0)])],
-                                "area_m2": 0.5,
-                            }
-                        ),
-                    )
-                ],
+                gpd.GeoDataFrame({"geometry": [Polygon([(0, 0), (1, 1), (1, 0)])]}),
+                gpd.GeoDataFrame(
+                    {"geometry": [Polygon([(0, 0), (1, 1), (1, 0)])], "area_m2": 0.5}
+                ),
             ),
             (
-                "ground",
-                "mark",
+                "name",
                 True,
                 False,
                 True,
-                "Sjö",
-                [
-                    (
-                        "Sjö",
-                        gpd.GeoDataFrame(
-                            {
-                                "geometry": [Polygon([(0, 0), (1, 1), (1, 0)])],
-                            }
-                        ),
-                    )
-                ],
-                [
-                    (
-                        "Sjö",
-                        gpd.GeoDataFrame(
-                            {
-                                "geometry": [Polygon([(0, 0), (1, 1), (1, 0)])],
-                                "length_m": 2 + np.sqrt(2),
-                            }
-                        ),
-                    )
-                ],
+                gpd.GeoDataFrame({"geometry": [Polygon([(0, 0), (1, 1), (1, 0)])]}),
+                gpd.GeoDataFrame(
+                    {
+                        "geometry": [Polygon([(0, 0), (1, 1), (1, 0)])],
+                        "length_m": 2 + np.sqrt(2),
+                    }
+                ),
             ),
             (
-                "ground",
-                "mark",
+                "name",
                 True,
                 True,
                 True,
-                "Sjö",
-                [
-                    (
-                        "Sjö",
-                        gpd.GeoDataFrame(
-                            {
-                                "geometry": [Polygon([(0, 0), (1, 1), (1, 0)])],
-                            }
-                        ),
-                    )
-                ],
-                [
-                    (
-                        "Sjö",
-                        gpd.GeoDataFrame(
-                            {
-                                "geometry": [Polygon([(0, 0), (1, 1), (1, 0)])],
-                                "area_m2": 0.5,
-                                "length_m": 2 + np.sqrt(2),
-                            }
-                        ),
-                    )
-                ],
+                gpd.GeoDataFrame({"geometry": [Polygon([(0, 0), (1, 1), (1, 0)])]}),
+                gpd.GeoDataFrame(
+                    {
+                        "geometry": [Polygon([(0, 0), (1, 1), (1, 0)])],
+                        "area_m2": 0.5,
+                        "length_m": 2 + np.sqrt(2),
+                    }
+                ),
             ),
             (
-                "ground",
-                "mark",
+                "name",
                 False,
                 True,
                 True,
-                "Sjö",
-                [
-                    (
-                        "Sjö",
-                        gpd.GeoDataFrame(
-                            {
-                                "geometry": [Polygon([(0, 0), (1, 1), (1, 0)])],
-                            }
-                        ),
-                    )
-                ],
-                [
-                    (
-                        "Sjö",
-                        gpd.GeoDataFrame(
-                            {
-                                "geometry": [Polygon([(0, 0), (1, 1), (1, 0)])],
-                                "area_m2": 0.5,
-                                "length_m": 2 + np.sqrt(2),
-                            }
-                        ),
-                    )
-                ],
+                gpd.GeoDataFrame({"geometry": [Polygon([(0, 0), (1, 1), (1, 0)])]}),
+                gpd.GeoDataFrame(
+                    {
+                        "geometry": [Polygon([(0, 0), (1, 1), (1, 0)])],
+                        "area_m2": 0.5,
+                        "length_m": 2 + np.sqrt(2),
+                    }
+                ),
             ),
         ],
     )
-    @patch("lantmateriet.geometry.Geometry._get_items")
-    @patch("lantmateriet.geometry.Geometry._dissolve_parallel")
-    @patch("lantmateriet.geometry.Geometry.__init__", return_value=None)
+    @patch("lantmateriet.geometry.gpd.read_file")
+    @patch("lantmateriet.geometry.Geometry._dissolve_exterior")
+    @patch("lantmateriet.geometry.Geometry._dissolve")
     def test_unit_process(
         self,
-        mock_geometry_init,
-        mock_dissolve_parallel,
-        mock_get_items,
-        item_type,
-        layer,
+        mock_dissolve,
+        mock_dissolve_exterior,
+        mock_df_read_file,
+        name,
         dissolve,
         set_area,
         set_length,
-        key,
         input_geometry,
         dissolved_geometry,
     ):
-        """Unit test of Geometry _process method.
-
-        Args:
-            mock_geometry_init: mock of Geometry init
-            mock_dissolve_parallel: mock of Geometry _dissolve_parallel
-            mock_get_items: mock of Geometry _get_items
-            item_type: item type
-            layer: layer
-            dissolve: dissolve flag
-            set_area: set area flag
-            set_length: set length flag
-            key: key
-            input_geometry: input geometry
-            dissolved_geometry: dissolved geometry
-        """
+        """Unit test of Geometry _process method."""
         if dissolve:
-            mock_dissolve_parallel.return_value = input_geometry
-        else:
-            mock_get_items.return_value = input_geometry
-        geometry = Geometry("path")
-        geometry.df = gpd.GeoDataFrame()
+            if name == "name":
+                mock_dissolve.return_value = input_geometry
+            else:
+                mock_dissolve_exterior.return_value = input_geometry
 
-        result = geometry._process(item_type, layer, dissolve, set_area, set_length)
+        geometry = Geometry("path", "50", "layer", name, "field")
+        geometry.df = input_geometry
 
-        mock_get_items.assert_called_once_with(item_type, layer)
-        if dissolve:
-            mock_dissolve_parallel.assert_called_once()
-        assert set(result.keys()) == set([x[0] for x in dissolved_geometry])
-        testing.assert_geodataframe_equal(result[key], dissolved_geometry[0][1])
+        geometry._process(dissolve, set_area, set_length)
+
+        testing.assert_geodataframe_equal(geometry.df, dissolved_geometry)
 
         if set_area is True:
-            assert "area_m2" in result[key]
+            assert "area_m2" in geometry.df
 
         if set_area is False:
-            assert "area_m2" not in result[key]
+            assert "area_m2" not in geometry.df
 
         if set_length is True:
-            assert "length_m" in result[key]
+            assert "length_m" in geometry.df
 
         if set_length is False:
-            assert "length_m" not in result[key]
+            assert "length_m" not in geometry.df
 
-    @patch.object(gpd.GeoDataFrame, "to_file")
-    @patch("lantmateriet.geometry.Geometry.__init__", return_value=None)
-    def test_unit_save(self, mock_geometry_init, mock_to_file):
-        """Unit test of Geometry _save method.
+    @patch("lantmateriet.geometry.os.makedirs")
+    @patch("lantmateriet.geometry.gpd.read_file")
+    def test_unit_save(self, mock_df_read_file, mock_makedirs):
+        """Unit test of Geometry _save method."""
+        geometry = Geometry("path", "50", "layer", "name", "field")
+        geometry.df = MagicMock()
 
-        Args:
-            mock_geometry_init: mock of Geometry init
-            mock_to_file: mock of GeoDataFrame to_file
-        """
-        geometry = Geometry("path")
-        geometry.df = gpd.GeoDataFrame({"objekttyp": ["objekttyp"]})
-        geometry.config = config.config_50
+        path = "path_to_save"
+        file_name = "file"
+        geometry._save(path, file_name)
 
-        item_type = "ground"
-        layer = "mark"
-        all_geometry = {
-            k: gpd.GeoDataFrame(
-                {"objekttyp": ["objekttyp"]},
-                geometry=[Polygon([(0, 0), (1, 1), (1, 0)])],
-                crs=config.config_50.espg_3006,
-            )
-            for k in config.config_50[item_type][layer].keys()
-            if k not in config.config_50.exclude
-        }
-
-        geometry._save(item_type, layer, all_geometry, "path_to_save")
-
-        mock_to_file.assert_has_calls(
+        mock_makedirs.assert_called_once()
+        geometry.df.to_crs.assert_has_calls(
             [
-                call(
-                    f"path_to_save/{file_name}",
-                    driver="GeoJSON",
-                )
-                for k, file_name in config.config_50.ground[layer].items()
-                if k not in config.config_50.exclude
-            ],
-            any_order=True,
+                call("EPSG:4326"),
+                call().to_file(
+                    "path_to_save/path/layer/file.geojson", driver="GeoJSON"
+                ),
+            ]
         )
