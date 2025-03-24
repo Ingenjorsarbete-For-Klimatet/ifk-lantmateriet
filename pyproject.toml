@@ -17,7 +17,7 @@ dependencies = [
     "typer ~= 0.12",
     "ray ~= 2.20",
     "pystac-client == 0.8.6",
-    "python-dotenv 1.0.1 
+    "python-dotenv == 1.0.1"
 ]
 
 [dependency-groups]
