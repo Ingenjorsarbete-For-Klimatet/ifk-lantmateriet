@@ -65,6 +65,7 @@ def download_assets_from_item(item: Item, location: str | Path) -> None:
         location: location to save assets to
     """
     assets = get_assets_from_item(item)
+    item_file_path = Path(location) / item.id / ITEM_FILE
 
     for k, v in item.assets.items():
         file = assets[k]
@@ -73,7 +74,7 @@ def download_assets_from_item(item: Item, location: str | Path) -> None:
         with open(Path(location) / item.id / filename, "wb") as f:
             f.write(file)
 
-    with open(Path(location) / item.id / ITEM_FILE, "w") as f:
+    with open(item_file_path, "w") as f:
         json.dump(item.to_dict(), f)
 
 
@@ -87,6 +88,11 @@ def check_item_newer(item: Item, location: str | Path) -> bool:
     Returns:
         True if item is newer, False otherwise
     """
+    item_file_path = Path(location) / item.id / ITEM_FILE
+
+    if not item_file_path.exists():
+        return False
+
     with open(Path(location) / item.id / ITEM_FILE, "r") as f:
         saved_item = json.load(f)
 
