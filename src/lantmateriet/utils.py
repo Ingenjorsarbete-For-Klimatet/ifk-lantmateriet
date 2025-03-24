@@ -3,12 +3,18 @@
 import logging
 import time
 from functools import wraps
-from typing import Callable
+from typing import Callable, Optional
 
 import geopandas as gpd
 from unidecode import unidecode
 
+import requests
+from requests.auth import HTTPBasicAuth
+
 logger = logging.getLogger(__name__)
+
+STATUS_OK = 200
+OUT_OF_BOUNDS = "out of bounds"
 
 
 def timeit(has_key: bool = False):
@@ -72,3 +78,35 @@ def normalise_item_names(item_names: list[str]) -> dict[str, str]:
         .replace("/", "_")
         for i, x in enumerate(item_names)
     }
+
+
+logger = logging.getLogger(__name__)
+
+
+def get_request(url: str, auth: Optional[HTTPBasicAuth] = None) -> requests.Response:
+    """Get request from url.
+
+    Args:
+        url: url to request from
+        auth: authentication
+
+    Returns:
+        response
+
+    Raises:
+        ValueError
+        requests.exceptions.HTTPError
+    """
+    logger.debug(f"Fetching from {url}.")
+
+    response = requests.get(url, timeout=200, auth=auth)
+
+    if response.status_code != STATUS_OK:
+        if OUT_OF_BOUNDS in response.text.lower():
+            raise ValueError("Request is out of bounds.")
+
+        raise requests.exceptions.HTTPError(f"Could not request from {url}.")
+
+    logger.debug(f"Successful request from {url}.")
+
+    return response
