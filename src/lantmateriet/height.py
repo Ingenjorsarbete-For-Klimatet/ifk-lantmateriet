@@ -17,6 +17,8 @@ BASE_URL = "https://api.lantmateriet.se/stac-hojd/v1/"
 
 BASIC_AUTH = HTTPBasicAuth(USER, PASS)
 ITEM_FILE = "item.json"
+CHANGE_DATE = "andringsdatum"
+PROPERTIES = "properties"
 
 
 class Height:
@@ -96,4 +98,4 @@ def check_item_newer(item: Item, location: str | Path) -> bool:
     with open(Path(location) / item.id / ITEM_FILE, "r") as f:
         saved_item = json.load(f)
 
-    return item.properties["andringsdatum"] > saved_item["properties"]["andringsdatum"]
+    return item.properties[CHANGE_DATE] > saved_item[PROPERTIES][CHANGE_DATE]
