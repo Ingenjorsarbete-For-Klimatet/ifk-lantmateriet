@@ -63,9 +63,7 @@ class Lantmateriet:
         Path(save_path).mkdir(exist_ok=True)
         self._order_enpoint = json.loads(get_request(order_url).content)
         available_files = json.loads(get_request(download_url).content)
-        self._available_files_enpoint = {
-            item["title"]: item for item in available_files
-        }
+        self._available_files_enpoint = {item["title"]: item for item in available_files}
 
     @property
     def order(self) -> dict[str, str]:
@@ -105,9 +103,7 @@ class Lantmateriet:
         """
         file_size = int(response.headers.get("Content-Length", 0))
         buffer = io.BytesIO()
-        with tqdm.wrapattr(
-            response.raw, "read", total=file_size, desc="Downloading"
-        ) as r_raw:
+        with tqdm.wrapattr(response.raw, "read", total=file_size, desc="Downloading") as r_raw:
             while True:
                 chunk = buffer.write(r_raw.read(BLOCK_SIZE))
                 if not chunk:

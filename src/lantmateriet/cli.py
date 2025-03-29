@@ -1,9 +1,10 @@
 """CLI module."""
 
 import typer
+from tqdm import tqdm
+
 from lantmateriet.api import Lantmateriet
 from lantmateriet.extract import extract
-from tqdm import tqdm
 
 app = typer.Typer()
 

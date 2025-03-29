@@ -6,9 +6,10 @@ import geopandas as gpd
 import numpy as np
 import pytest
 from geopandas import testing
+from shapely.geometry import Point, Polygon
+
 from lantmateriet import config
 from lantmateriet.geometry import DissolveTouchingGeometry, Geometry
-from shapely.geometry import Point, Polygon
 
 
 class TestUnitDissolveTouchingGeometry:
@@ -121,9 +122,7 @@ class TestUnitDissolveTouchingGeometry:
             touching_geometry: touching geometry index
             expected_result: expected results
         """
-        result = DissolveTouchingGeometry._connect_touching_geometries(
-            touching_geometry
-        )
+        result = DissolveTouchingGeometry._connect_touching_geometries(touching_geometry)
         assert expected_result == result
 
     @pytest.mark.parametrize(
@@ -155,9 +154,7 @@ class TestUnitDissolveTouchingGeometry:
             touching_geometry: touching geometry index
             expected_result: expected results
         """
-        result = DissolveTouchingGeometry._remove_duplicate_geometries(
-            touching_geometry
-        )
+        result = DissolveTouchingGeometry._remove_duplicate_geometries(touching_geometry)
         assert expected_result == result
 
     @pytest.mark.parametrize(
@@ -239,9 +236,7 @@ class TestUnitDissolveTouchingGeometry:
             ),
         ],
     )
-    def test_unit_dissolvetouchinggeometry_get_touching_geometries(
-        self, df, expected_result
-    ):
+    def test_unit_dissolvetouchinggeometry_get_touching_geometries(self, df, expected_result):
         """Unit test of DissolveTouchingGeometry _get_touching_geometries method.
 
         Args:
@@ -257,9 +252,7 @@ class TestUnitDissolveTouchingGeometry:
         [
             (gpd.GeoDataFrame({"geometry": []}), {}, ([], [])),
             (
-                gpd.GeoDataFrame(
-                    {"geometry": [Point(1, 2), Point(1, 2)]}, index=[1, 2]
-                ),
+                gpd.GeoDataFrame({"geometry": [Point(1, 2), Point(1, 2)]}, index=[1, 2]),
                 {},
                 ([], []),
             ),
@@ -360,12 +353,8 @@ class TestUnitDissolveTouchingGeometry:
         [
             (gpd.GeoDataFrame({"geometry": []}), gpd.GeoDataFrame({"geometry": []})),
             (
-                gpd.GeoDataFrame(
-                    {"geometry": [Point(1, 2), Point(1, 2)]}, index=[1, 2]
-                ),
-                gpd.GeoDataFrame(
-                    {"geometry": [Point(1, 2), Point(1, 2)]}, index=[1, 2]
-                ),
+                gpd.GeoDataFrame({"geometry": [Point(1, 2), Point(1, 2)]}, index=[1, 2]),
+                gpd.GeoDataFrame({"geometry": [Point(1, 2), Point(1, 2)]}, index=[1, 2]),
             ),
             (
                 gpd.GeoDataFrame(
@@ -480,9 +469,7 @@ class TestUnitDissolveTouchingGeometry:
             ),
         ],
     )
-    def test_unit_dissolvetouchinggeometry_dissolve_and_explode(
-        self, df, expected_result
-    ):
+    def test_unit_dissolvetouchinggeometry_dissolve_and_explode(self, df, expected_result):
         """Unit test of DissolveTouchingGeometry dissolve_and_explode method.
 
         Args:
@@ -497,12 +484,8 @@ class TestUnitDissolveTouchingGeometry:
         "df, expected_result",
         [
             (
-                gpd.GeoDataFrame(
-                    {"geometry": [], "objekttyp": []}, crs=config.config_50.espg_3006
-                ),
-                gpd.GeoDataFrame(
-                    {"geometry": [], "objekttyp": []}, crs=config.config_50.espg_3006
-                ),
+                gpd.GeoDataFrame({"geometry": [], "objekttyp": []}, crs=config.config_50.espg_3006),
+                gpd.GeoDataFrame({"geometry": [], "objekttyp": []}, crs=config.config_50.espg_3006),
             ),
             (
                 gpd.GeoDataFrame(
@@ -582,9 +565,7 @@ class TestUnitDissolveTouchingGeometry:
             ),
         ],
     )
-    def test_unit_dissolvetouchinggeometry_dissolve_and_explode_exterior(
-        self, df, expected_result
-    ):
+    def test_unit_dissolvetouchinggeometry_dissolve_and_explode_exterior(self, df, expected_result):
         """Unit test of DissolveTouchingGeometry dissolve_and_explode_exterior method.
 
         Args:
@@ -654,9 +635,7 @@ class TestUnitGeometry:
     @pytest.mark.parametrize(
         "input_df",
         [
-            gpd.GeoDataFrame(
-                {"geometry": [Polygon([(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)])]}
-            ),
+            gpd.GeoDataFrame({"geometry": [Polygon([(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)])]}),
         ],
     )
     def test_unit_set_length(self, input_df):
@@ -671,8 +650,7 @@ class TestUnitGeometry:
         result = Geometry._dissolve(df)
 
         assert (
-            mock_DissolveTouchingGeometry.return_value.dissolve_and_explode.return_value
-            == result
+            mock_DissolveTouchingGeometry.return_value.dissolve_and_explode.return_value == result
         )
         mock_DissolveTouchingGeometry.assert_called_with(df)
         mock_DissolveTouchingGeometry.return_value.dissolve_and_explode.assert_called()
@@ -719,9 +697,7 @@ class TestUnitGeometry:
                 True,
                 False,
                 gpd.GeoDataFrame({"geometry": [Polygon([(0, 0), (1, 1), (1, 0)])]}),
-                gpd.GeoDataFrame(
-                    {"geometry": [Polygon([(0, 0), (1, 1), (1, 0)])], "area_m2": 0.5}
-                ),
+                gpd.GeoDataFrame({"geometry": [Polygon([(0, 0), (1, 1), (1, 0)])], "area_m2": 0.5}),
             ),
             (
                 "name",
@@ -822,8 +798,6 @@ class TestUnitGeometry:
         geometry.df.to_crs.assert_has_calls(
             [
                 call("EPSG:4326"),
-                call().to_file(
-                    "path_to_save/path/layer/file.geojson", driver="GeoJSON"
-                ),
+                call().to_file("path_to_save/path/layer/file.geojson", driver="GeoJSON"),
             ]
         )

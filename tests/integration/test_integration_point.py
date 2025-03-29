@@ -2,6 +2,7 @@
 
 import geopandas as gpd
 from geopandas import testing
+
 from lantmateriet.point import Point
 
 test_byggnad_geojson = gpd.read_file(
