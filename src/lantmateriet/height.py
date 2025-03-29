@@ -19,7 +19,7 @@ CHANGE_DATE = "andringsdatum"
 PROPERTIES = "properties"
 
 
-class Collection:
+class LantmaterietCollection:
     """Collection class."""
 
     def __init__(self):
@@ -40,7 +40,7 @@ class Collection:
         return list(self.collections[collection_id].get_all_items())
 
 
-class Item:
+class LantmaterietItem:
     """Item class."""
 
     def __init__(self, item: Item):

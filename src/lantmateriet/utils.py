@@ -6,10 +6,9 @@ from functools import wraps
 from typing import Callable, Optional
 
 import geopandas as gpd
-from unidecode import unidecode
-
 import requests
 from requests.auth import HTTPBasicAuth
+from unidecode import unidecode
 
 logger = logging.getLogger(__name__)
 
@@ -71,11 +70,7 @@ def normalise_item_names(item_names: list[str]) -> dict[str, str]:
     """Normalise item names to save format."""
     return {
         x: "{:02d}_".format(i + 1)
-        + unidecode(x.lower())
-        .replace(" ", "_")
-        .replace("-", "")
-        .replace(",", "")
-        .replace("/", "_")
+        + unidecode(x.lower()).replace(" ", "_").replace("-", "").replace(",", "").replace("/", "_")
         for i, x in enumerate(item_names)
     }
 
