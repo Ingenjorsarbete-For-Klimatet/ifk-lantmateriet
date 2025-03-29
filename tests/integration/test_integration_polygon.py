@@ -2,6 +2,7 @@
 
 import geopandas as gpd
 from geopandas import testing
+
 from lantmateriet.polygon import Polygon
 
 test_mark_geojson = gpd.read_file(

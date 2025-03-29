@@ -6,9 +6,10 @@ from os import path
 from typing import Union
 
 import geopandas as gpd
+from shapely.ops import polygonize
+
 from lantmateriet import config
 from lantmateriet.utils import timeit
-from shapely.ops import polygonize
 
 TOUCHING_MAX_DIST = 1e-5
 BUFFER_DIST = 1e-8
@@ -171,8 +172,7 @@ class DissolveTouchingGeometry:
         keep_indices, drop_indices = self._get_df_indices(touching_geometries)
 
         dissolved_geometry = [
-            self.df.iloc[list(tgi)].dissolve().geometry[0]
-            for _, tgi in touching_geometries.items()
+            self.df.iloc[list(tgi)].dissolve().geometry[0] for _, tgi in touching_geometries.items()
         ]
 
         dissolved_df = gpd.GeoDataFrame(
@@ -180,9 +180,7 @@ class DissolveTouchingGeometry:
             index=[index for index in keep_indices],
         )
 
-        self.df.loc[keep_indices, "geometry"] = dissolved_df.loc[
-            keep_indices, "geometry"
-        ]
+        self.df.loc[keep_indices, "geometry"] = dissolved_df.loc[keep_indices, "geometry"]
         self.df.drop(index=drop_indices, inplace=True)
 
         return self.df.explode(ignore_index=True)
@@ -214,9 +212,7 @@ class DissolveTouchingGeometry:
 class Geometry:
     """Geometry class."""
 
-    def __init__(
-        self, file_path: str, detail_level: str, layer: str, name: str, field: str
-    ):
+    def __init__(self, file_path: str, detail_level: str, layer: str, name: str, field: str):
         """Initialise Geometry object.
 
         Args:
@@ -231,9 +227,7 @@ class Geometry:
         elif detail_level == "1m":
             self.config = config.config_1m
         else:
-            raise NotImplementedError(
-                f"The level of detail: {detail_level} is not implemented."
-            )
+            raise NotImplementedError(f"The level of detail: {detail_level} is not implemented.")
 
         self._file_path = file_path
         self._layer = layer

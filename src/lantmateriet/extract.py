@@ -9,13 +9,14 @@ import fiona
 import geopandas as gpd
 import pandas as pd
 import shapely
+from ray.util.multiprocessing import Pool
+
 from lantmateriet.config import config_50
 from lantmateriet.geometry import Geometry
 from lantmateriet.line import Line
 from lantmateriet.point import Point
 from lantmateriet.polygon import Polygon
 from lantmateriet.utils import normalise_item_names, read_first_entry, read_unique_names
-from ray.util.multiprocessing import Pool
 
 file_geometry_mapping: dict[shapely.Geometry, Union[Line, Polygon, Point]] = {
     shapely.Point: Point,
@@ -40,16 +41,12 @@ def save_sweden_base(target_path: str, processed_geo_objects: Geometry) -> None:
         processed_geo_objects: geometry objects
     """
     df_sverige = (
-        pd.concat([item for item in processed_geo_objects])
-        .dissolve()
-        .explode(index_parts=False)
+        pd.concat([item for item in processed_geo_objects]).dissolve().explode(index_parts=False)
     )
     df_sverige["area_m2"] = df_sverige.area
     df_sverige["length_m"] = df_sverige.length
     df_sverige = df_sverige.to_crs(config_50.epsg_4326)
-    df_sverige.to_file(
-        f"{target_path}/mark_sverige/mark/00_sverige" + ".geojson", driver="GeoJSON"
-    )
+    df_sverige.to_file(f"{target_path}/mark_sverige/mark/00_sverige" + ".geojson", driver="GeoJSON")
 
 
 def parallel_process(

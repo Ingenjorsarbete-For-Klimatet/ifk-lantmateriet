@@ -2,6 +2,7 @@
 
 import geopandas as gpd
 from geopandas import testing
+
 from lantmateriet.line import Line
 
 test_vaglinje_geojson = gpd.read_file(
@@ -22,9 +23,7 @@ test_vaglinje_result = gpd.read_file(
     engine="pyogrio",
     use_arrow=True,
 )
-test_vaglinje_result["objekttypnr"] = test_vaglinje_result["objekttypnr"].astype(
-    "int64"
-)
+test_vaglinje_result["objekttypnr"] = test_vaglinje_result["objekttypnr"].astype("int64")
 
 
 class TestIntegrationLine:
