@@ -4,11 +4,10 @@ import json
 import os
 from pathlib import Path
 
+from lantmateriet.utils import get_request
 from pystac import Item
 from pystac_client import Client
 from requests.auth import HTTPBasicAuth
-
-from lantmateriet.utils import get_request
 
 USER = os.environ["IFK_LANTMATERIET_USER"]
 PASS = os.environ["IFK_LANTMATERIET_PASSWORD"]
