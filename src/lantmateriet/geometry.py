@@ -222,8 +222,10 @@ class Geometry:
             name: name of data
             field: geopandas field
         """
+        if detail_level == "10":
+            self.config: Union[config.Config1M, config.Config50, config.Config10] = config.config_10
         if detail_level == "50":
-            self.config: Union[config.Config1M, config.Config50] = config.config_50
+            self.config = config.config_50
         elif detail_level == "1m":
             self.config = config.config_1m
         else:

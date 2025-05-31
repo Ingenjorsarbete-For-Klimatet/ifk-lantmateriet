@@ -58,5 +58,19 @@ class Config50(BaseConfig):
     }
 
 
+class Config10(BaseConfig):
+    """Config class."""
+
+    exclude = {"Hav", "Ej karterat område", "Sverige"}
+    exteriorise = {"Barr- och blandskog"}
+    ground_water = {
+        "Anlagt vatten",
+        "Sjö",
+        "Vattendragsyta",
+        "Hav",
+    }
+
+
 config_1m = Config1M()
 config_50 = Config50()
+config_10 = Config10()
