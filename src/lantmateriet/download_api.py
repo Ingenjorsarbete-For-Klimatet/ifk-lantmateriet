@@ -3,6 +3,7 @@
 import json
 import os
 from pathlib import Path
+import time
 
 from lantmateriet.utils import get_request
 from pystac import Item
@@ -37,7 +38,11 @@ class LantmaterietCollection:
         Returns:
             all items in collection
         """
-        return list(self.collections[collection_id].get_all_items())
+        result = []
+        for item in self.collections[collection_id].get_all_items():
+            result.append(item)
+            time.sleep(0.1)
+        return result
 
 
 class LantmaterietItem:
@@ -62,6 +67,7 @@ class LantmaterietItem:
         """
         assets = self.assets
         item_location = Path(location) / self.item.id
+        item_location.mkdir(parents=True, exist_ok=True)
 
         for k, v in self.item.assets.items():
             file = assets[k]
@@ -85,7 +91,7 @@ class LantmaterietItem:
         item_file_path = Path(location) / self.item.id / ITEM_FILE
 
         if not item_file_path.exists():
-            return False
+            return True
 
         with open(item_file_path, "r") as f:
             saved_item = json.load(f)
