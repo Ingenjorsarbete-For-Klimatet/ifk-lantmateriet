@@ -22,7 +22,7 @@ jobs:
           uv sync --group type
       - name: Type checking with mypy
         run: >
-          mypy
+          uv run mypy
           --namespace-packages
           --explicit-package-bases
           --allow-redefinition

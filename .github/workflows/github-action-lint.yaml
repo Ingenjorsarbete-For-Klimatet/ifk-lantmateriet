@@ -22,7 +22,7 @@ jobs:
           uv sync --group lint
       - name: Lint with ruff
         run: |
-          ruff check --output-format=github src tests
+          uv run ruff check --output-format=github src tests
       - name: Format with ruff
         run: |
-          ruff format --check src tests
+          uv run ruff format --check src tests
