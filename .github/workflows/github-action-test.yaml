@@ -35,7 +35,7 @@ jobs:
           echo "total=$TOTAL" >> $GITHUB_ENV
       - name: Coverage badge
         if: runner.os != 'Windows' && matrix.python-version == '3.11'
-        uses: schneegans/dynamic-badges-action@v1.6.0
+        uses: schneegans/dynamic-badges-action@v1.7.0
         with:
           auth: ${{ secrets.BADGE_SECRET }}
           gistID: e2326bc24f74f346a118a97b09e852ec
