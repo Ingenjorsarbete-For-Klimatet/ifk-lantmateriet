@@ -22,7 +22,7 @@ jobs:
         run: |
           uv sync --group test
       - name: Test with pytest
-        env: # Or as an environment variable
+        env:
           LANTMATERIET_USER: ${{ secrets.LANTMATERIET_USER }}
           LANTMATERIET_PASSWORD: ${{ secrets.LANTMATERIET_PASSWORD }}
         run: |
