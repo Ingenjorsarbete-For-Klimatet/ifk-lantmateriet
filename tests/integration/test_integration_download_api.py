@@ -4,13 +4,14 @@ import datetime
 import shutil
 from pathlib import Path
 
+from pystac import Item
+
 from lantmateriet.download_api import (
     CHANGE_DATE,
     ITEM_FILE,
     LantmaterietCollection,
     LantmaterietItem,
 )
-from pystac import Item
 
 
 class TestAdminBorder:

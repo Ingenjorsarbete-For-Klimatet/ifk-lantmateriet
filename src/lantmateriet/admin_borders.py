@@ -2,6 +2,8 @@
 
 import os
 
+from owslib.ogcapi.features import Features
+
 from lantmateriet.admin_border_types import (
     FeatureCollectionGeoJsonKommuner,
     FeatureCollectionGeoJsonLan,
@@ -9,7 +11,6 @@ from lantmateriet.admin_border_types import (
     FeatureGeoJsonLan,
     FeatureGeoJsonRike,
 )
-from owslib.ogcapi.features import Features
 
 USER = os.environ["IFK_LANTMATERIET_USER"]
 PASS = os.environ["IFK_LANTMATERIET_PASSWORD"]
