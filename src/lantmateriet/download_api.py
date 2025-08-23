@@ -12,8 +12,8 @@ from requests.auth import HTTPBasicAuth
 
 from lantmateriet.utils import get_request
 
-USER = os.environ["IFK_LANTMATERIET_USER"]
-PASS = os.environ["IFK_LANTMATERIET_PASSWORD"]
+USER = os.environ["LANTMATERIET_USER"]
+PASS = os.environ["LANTMATERIET_PASSWORD"]
 HEIGHT_URL = "https://api.lantmateriet.se/stac-hojd/v1/"
 
 BASIC_AUTH = HTTPBasicAuth(USER, PASS)
@@ -48,7 +48,7 @@ class LantmaterietCollection:
         Returns:
             all items in collection
         """
-        result = []
+        result: list[Item] = []
         for item in self._collections[collection_id].get_items(recursive=True):
             if len(result) == num_items:
                 return result

@@ -12,8 +12,8 @@ from lantmateriet.admin_border_types import (
     FeatureGeoJsonRike,
 )
 
-USER = os.environ["IFK_LANTMATERIET_USER"]
-PASS = os.environ["IFK_LANTMATERIET_PASSWORD"]
+USER = os.environ["LANTMATERIET_USER"]
+PASS = os.environ["LANTMATERIET_PASSWORD"]
 BASE_URL = "https://api.lantmateriet.se/ogc-features/v1/administrativ-indelning"
 BASIC_AUTH = (USER, PASS)
 LIMIT = 1000
