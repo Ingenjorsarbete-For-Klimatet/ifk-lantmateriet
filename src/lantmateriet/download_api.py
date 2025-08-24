@@ -1,7 +1,9 @@
 """Height module."""
 
+import datetime
 import json
 import os
+import time
 from pathlib import Path
 
 from pystac import Item
@@ -10,35 +12,51 @@ from requests.auth import HTTPBasicAuth
 
 from lantmateriet.utils import get_request
 
-USER = os.environ["IFK_LANTMATERIET_USER"]
-PASS = os.environ["IFK_LANTMATERIET_PASSWORD"]
-BASE_URL = "https://api.lantmateriet.se/stac-hojd/v1/"
+USER = os.environ["LANTMATERIET_USER"]
+PASS = os.environ["LANTMATERIET_PASSWORD"]
+HEIGHT_URL = "https://api.lantmateriet.se/stac-hojd/v1/"
 
 BASIC_AUTH = HTTPBasicAuth(USER, PASS)
 ITEM_FILE = "item.json"
 CHANGE_DATE = "andringsdatum"
 PROPERTIES = "properties"
+HEIGHT = "height"
+
+URL_MAP = {HEIGHT: HEIGHT_URL}
 
 
 class LantmaterietCollection:
     """Collection class."""
 
-    def __init__(self):
-        """Initialize the Collection class."""
-        self._base_url = BASE_URL
-        client = Client.open(self._base_url)
-        self.collections = {c.id: c for c in client.get_all_collections()}
+    def __init__(self, dtype: str = HEIGHT):
+        """Initialize the Collection class.
 
-    def get_items_from_collection(self, collection_id: str) -> list[Item]:
+        Args:
+            dtype: download type, currently only supports height
+        """
+        self._base_url = URL_MAP[dtype]
+        client = Client.open(self._base_url)
+        self._collections = {c.id: c for c in client.get_all_collections()}
+
+    def get_items_from_collection(self, collection_id: str, num_items: int = -1) -> list[Item]:
         """Get all items from a specific collection.
 
         Args:
             collection_id: id of the collection to get items from
+            num_items: number of items to get, -1 means all
 
         Returns:
             all items in collection
         """
-        return list(self.collections[collection_id].get_all_items())
+        result: list[Item] = []
+        for item in self._collections[collection_id].get_items(recursive=True):
+            if len(result) == num_items:
+                return result
+
+            result.append(item)
+            time.sleep(1)
+
+        return result
 
 
 class LantmaterietItem:
@@ -63,6 +81,7 @@ class LantmaterietItem:
         """
         assets = self.assets
         item_location = Path(location) / self.item.id
+        item_location.mkdir(parents=True, exist_ok=True)
 
         for k, v in self.item.assets.items():
             file = assets[k]
@@ -86,9 +105,14 @@ class LantmaterietItem:
         item_file_path = Path(location) / self.item.id / ITEM_FILE
 
         if not item_file_path.exists():
-            return False
+            return True
 
         with open(item_file_path, "r") as f:
             saved_item = json.load(f)
 
-        return self.item.properties[CHANGE_DATE] > saved_item[PROPERTIES][CHANGE_DATE]
+        new_item_date = datetime.datetime.strptime(self.item.properties[CHANGE_DATE], "%Y-%m-%d")
+        saved_item_date = datetime.datetime.strptime(
+            saved_item[PROPERTIES][CHANGE_DATE], "%Y-%m-%d"
+        )
+
+        return new_item_date > saved_item_date
