@@ -35,11 +35,12 @@ class Polygon(Geometry):
         """
         self._process(self.dissolve, set_area, set_length)
 
-    def save(self, save_path: str, file: str):
-        """Save processed ground items in EPSG:4326 as GeoJSON.
+    def save(self, save_path: str, file: str, file_ending: str = "fgb"):
+        """Save processed ground items in EPSG:4326.
 
         Args:
             save_path: path to save files in
             file: name of saved file
+            file_ending: what file type to save
         """
-        self._save(save_path, file)
+        self._save(save_path, file, file_ending)

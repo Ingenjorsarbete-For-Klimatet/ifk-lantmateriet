@@ -13,6 +13,7 @@ from lantmateriet.utils import timeit
 
 TOUCHING_MAX_DIST = 1e-5
 BUFFER_DIST = 1e-8
+FILE_ENDING_DRIVERS_MAP = {"geojson": "GeoJson", "fgb": "FlatGeobuf"}
 
 
 class DissolveTouchingGeometry:
@@ -224,7 +225,7 @@ class Geometry:
         """
         if detail_level == "10":
             self.config: Union[config.Config1M, config.Config50, config.Config10] = config.config_10
-        if detail_level == "50":
+        elif detail_level == "50":
             self.config = config.config_50
         elif detail_level == "1m":
             self.config = config.config_1m
@@ -325,17 +326,19 @@ class Geometry:
         if set_length is True:
             self.df = Geometry._set_length(self.df)
 
-    def _save(self, save_path: str, file: str) -> None:
-        """Save processed geometry items in EPSG:4326 as GeoJSON.
+    def _save(self, save_path: str, file: str, file_ending: str = "fgb") -> None:
+        """Save processed geometry items in EPSG:4326.
 
         Args:
             save_path: path to save files in
             file: name of saved file
+            file_ending: what file type to save
         """
+        file_ending_driver = FILE_ENDING_DRIVERS_MAP[file_ending]
         folder_path = path.join(
             save_path, self._file_path.split("/")[-1].split(".")[0], self._layer
         )
         os.makedirs(folder_path, exist_ok=True)
 
         df = self.df.to_crs(self.config.epsg_4326)
-        df.to_file(path.join(folder_path, file) + ".geojson", driver="GeoJSON")
+        df.to_file(path.join(folder_path, file) + f".{file_ending}", driver=file_ending_driver)
