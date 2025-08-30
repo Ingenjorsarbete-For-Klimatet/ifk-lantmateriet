@@ -34,11 +34,12 @@ class Line(Geometry):
         """
         self._process(self.dissolve, False, set_length)
 
-    def save(self, save_path: str, file: str) -> None:
-        """Save processed communication items in EPSG:4326 as GeoJSON.
+    def save(self, save_path: str, file: str, file_ending: str = "fgb") -> None:
+        """Save processed communication items in EPSG:4326.
 
         Args:
             save_path: path to save files in
             file: name of saved file
+            file_ending: what file type to save
         """
-        self._save(save_path, file)
+        self._save(save_path, file, file_ending)

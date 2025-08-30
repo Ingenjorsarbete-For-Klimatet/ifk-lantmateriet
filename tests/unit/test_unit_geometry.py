@@ -798,6 +798,6 @@ class TestUnitGeometry:
         geometry.df.to_crs.assert_has_calls(
             [
                 call("EPSG:4326"),
-                call().to_file("path_to_save/path/layer/file.geojson", driver="GeoJSON"),
+                call().to_file("path_to_save/path/layer/file.fgb", driver="FlatGeobuf"),
             ]
         )
