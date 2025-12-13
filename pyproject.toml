@@ -9,7 +9,7 @@ authors = [
 ]
 requires-python = ">=3.10,<3.12"
 dependencies = [
-    "geopandas ~= 0.14",
+    "geopandas ~= 1.1.1",
     "pyogrio ~= 0.7",
     "pyarrow ~= 16.0",
     "unidecode ~= 1.3",
