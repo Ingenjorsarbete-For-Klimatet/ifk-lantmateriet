@@ -15,6 +15,7 @@ from lantmateriet.utils import get_request
 USER = os.environ["LANTMATERIET_USER"]
 PASS = os.environ["LANTMATERIET_PASSWORD"]
 HEIGHT_URL = "https://api.lantmateriet.se/stac-hojd/v1/"
+SLEEP_NUM = 10
 
 BASIC_AUTH = HTTPBasicAuth(USER, PASS)
 ITEM_FILE = "item.json"
@@ -47,7 +48,9 @@ class LantmaterietCollection:
         """
         return self._collections
 
-    def get_items_from_collection(self, collection_id: str, num_items: int = -1) -> list[Item]:
+    def get_items_from_collection(
+        self, collection_id: str, num_items: int = -1, sleep_num: int = SLEEP_NUM
+    ) -> list[Item]:
         """Get all items from a specific collection.
 
         The API has a rate limit. I'm not fully sure what it is, but a sleep every tenth iteration works.
@@ -55,12 +58,12 @@ class LantmaterietCollection:
         Args:
             collection_id: id of the collection to get items from
             num_items: number of items to get, -1 means all
+            sleep_num: sleep 1 sec after number of iterations
 
         Returns:
             all items in collection
         """
         result: list[Item] = []
-        sleep_num = 10
 
         for i, item in enumerate(self._collections[collection_id].get_all_items()):
             if len(result) == num_items:
