@@ -38,8 +38,19 @@ class LantmaterietCollection:
         client = Client.open(self._base_url)
         self._collections = {c.id: c for c in client.get_all_collections()}
 
+    @property
+    def collections(self):
+        """Get all collections.
+
+        Returns:
+            collections
+        """
+        return self._collections
+
     def get_items_from_collection(self, collection_id: str, num_items: int = -1) -> list[Item]:
         """Get all items from a specific collection.
+
+        The API has a rate limit. I'm not fully sure what it is, but a sleep every tenth iteration works.
 
         Args:
             collection_id: id of the collection to get items from
@@ -49,12 +60,16 @@ class LantmaterietCollection:
             all items in collection
         """
         result: list[Item] = []
-        for item in self._collections[collection_id].get_items(recursive=True):
+        sleep_num = 10
+
+        for i, item in enumerate(self._collections[collection_id].get_all_items()):
             if len(result) == num_items:
                 return result
 
             result.append(item)
-            time.sleep(1)
+
+            if i % sleep_num == 0:
+                time.sleep(1)
 
         return result
 
