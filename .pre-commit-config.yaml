@@ -1,23 +1,26 @@
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v2.3.0
+  rev: v6.0.0
   hooks:
   - id: check-yaml
   - id: end-of-file-fixer
   - id: trailing-whitespace
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.12.11
+  rev: v0.17.0
   hooks:
     - id: ruff
       types_or: [ python, pyi, jupyter ]
       args: [ --fix ]
     - id: ruff-format
       types_or: [ python, pyi, jupyter ]
-- repo: https://github.com/pre-commit/mirrors-mypy
-  rev: "586b4f0"
+- repo: local
   hooks:
   - id: mypy
-- repo: https://github.com/igorshubovych/markdownlint-cli
-  rev: v0.32.2
+    name: mypy
+    entry: uv run mypy
+    language: system
+    types_or: [ python, pyi ]
+- repo: https://github.com/DavidAnson/markdownlint-cli2
+  rev: v0.23.3
   hooks:
-  - id: markdownlint
+  - id: markdownlint-cli2
