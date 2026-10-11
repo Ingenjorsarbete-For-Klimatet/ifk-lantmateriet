@@ -1,0 +1,5 @@
+config:
+  default: true
+  no-inline-html: false
+ignores:
+  - README.md

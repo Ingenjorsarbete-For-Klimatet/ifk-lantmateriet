@@ -5,7 +5,6 @@ import logging
 from pathlib import Path
 from typing import Optional, Union
 
-import fiona
 import geopandas as gpd
 import pandas as pd
 import shapely
@@ -117,7 +116,7 @@ def extract(source_path: str, target_path: str) -> None:
 
     all_files = []
     for file in files:
-        available_layers = fiona.listlayers(file)
+        available_layers = gpd.list_layers(file)["name"]
         for layer in available_layers:
             all_files.append((target_path, file, layer))
 
