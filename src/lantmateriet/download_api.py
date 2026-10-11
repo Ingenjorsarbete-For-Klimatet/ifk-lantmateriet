@@ -65,7 +65,7 @@ class LantmaterietCollection:
         """
         result: list[Item] = []
 
-        for i, item in enumerate(self._collections[collection_id].get_all_items()):
+        for i, item in enumerate(self._collections[collection_id].get_items(recursive=True)):
             if len(result) == num_items:
                 return result
 
