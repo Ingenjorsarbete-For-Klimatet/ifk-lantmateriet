@@ -1,18 +1,20 @@
 """Geometry module."""
 
 import os
-from copy import deepcopy
 from os import path
 from typing import Union
 
 import geopandas as gpd
+import numpy as np
+import pandas as pd
+from scipy.sparse import coo_matrix
+from scipy.sparse.csgraph import connected_components
 from shapely.ops import polygonize
 
 from lantmateriet import config
 from lantmateriet.utils import timeit
 
 TOUCHING_MAX_DIST = 1e-5
-BUFFER_DIST = 1e-8
 FILE_ENDING_DRIVERS_MAP = {"geojson": "GeoJson", "fgb": "FlatGeobuf"}
 
 
@@ -21,170 +23,72 @@ class DissolveTouchingGeometry:
 
     Args:
         df: GeoPandas dataframe
+        merge_key: column that must hold the same value for two touching
+            geometries to merge, None to merge all touching geometries
     """
 
-    def __init__(self, df: gpd.GeoDataFrame):
+    def __init__(self, df: gpd.GeoDataFrame, merge_key: str | None = None):
         """Initialise object.
 
         Args:
             df: dataframe
+            merge_key: merge key column name
         """
         self.df = df
+        self.merge_key = merge_key
 
-    def _get_spatial_index(self):
-        """Get spatial index of GeoPandas dataframe.
+    def _get_component_labels(self) -> np.ndarray:
+        """Get connected component label of each geometry.
 
-        Returns:
-            spatial index
-        """
-        return self.df.sindex
-
-    @staticmethod
-    def _format_touching_geometries(
-        input_geometry_index: list, touching_geometry_index: list
-    ) -> dict:
-        """Put touching geometries into a dictionary.
-
-        Args:
-            input_geometry_index: index of input geometry
-            touching_geometry_index: index of touching geometry
+        Geometries within TOUCHING_MAX_DIST of each other are connected,
+        directly or via other geometries, and share a component label.
+        With a merge key, only pairs whose key values are equal are connected,
+        and null counts as equal on both sides.
+        Touching pairs with a missing key column never merge.
 
         Returns:
-            touching geometries
+            array of component labels, one per geometry
         """
-        touching_geometries = {}
-        for i, input_index in enumerate(input_geometry_index):
-            if input_index not in touching_geometries:
-                touching_geometries[input_index] = {input_index}
-
-            touching_geometries[input_index].add(touching_geometry_index[i])
-
-        return touching_geometries
-
-    @staticmethod
-    def _connect_touching_geometries(touching_geometries: dict) -> dict:
-        """Connect all touching geometries, including duplicates.
-
-        Args:
-            touching_geometries: map of touching geometries
-
-        Returns:
-            connected touching geometries
-        """
-        connected_touching_geometries = deepcopy(touching_geometries)
-
-        for _, touching_indices in list(connected_touching_geometries.items()):
-            while True:
-                connected_indices = touching_indices.copy()
-
-                for i in touching_indices:
-                    connected_indices.update(connected_touching_geometries[i])
-                    connected_touching_geometries[i].update(touching_indices)
-
-                if not connected_indices - touching_indices:
-                    break
-
-                touching_indices = connected_indices
-
-        return connected_touching_geometries
-
-    @staticmethod
-    def _remove_duplicate_geometries(touching_geometries: dict) -> dict:
-        """Remove duplicate geometries.
-
-        Args:
-            touching_geometries: map of conneced touching geometries
-
-        Returns:
-            unique connected touching geometries
-        """
-        all_primary_index = set()
-        all_secondary_indices: set = set()
-
-        for primary_index, secondary_indices in touching_geometries.items():
-            if len(all_secondary_indices) == 0:
-                all_primary_index.add(primary_index)
-                all_secondary_indices.update(secondary_indices)
-                continue
-
-            if all_secondary_indices - secondary_indices:
-                all_primary_index.difference_update(secondary_indices)
-                all_primary_index.add(primary_index)
-                all_secondary_indices.update(secondary_indices)
-
-        return {
-            primary_index: list(secondary_indices)
-            for primary_index, secondary_indices in touching_geometries.items()
-            if primary_index in all_primary_index
-        }
-
-    def _get_touching_geometries(self) -> dict:
-        """Get touching geometries indices.
-
-        Returns:
-            indices of unique connected touching geometries
-        """
-        spatial_index = self._get_spatial_index()
-        input_geometry_index, touching_geometry_index = spatial_index.nearest(
-            self.df["geometry"], exclusive=True, max_distance=TOUCHING_MAX_DIST
+        left, right = self.df.sindex.query(
+            self.df.geometry, predicate="dwithin", distance=TOUCHING_MAX_DIST
         )
-
-        disconnected_touching_geometries = self._format_touching_geometries(
-            input_geometry_index, touching_geometry_index
+        mask = left != right
+        if self.merge_key is not None:
+            key = self.df.get(self.merge_key)
+            if key is None:
+                mask = np.zeros_like(mask)
+            else:
+                values = key.to_numpy()
+                left_values = values[left]
+                right_values = values[right]
+                both_null = pd.isna(left_values) & pd.isna(right_values)
+                mask = mask & ((left_values == right_values) | both_null)
+        graph = coo_matrix(
+            (np.ones(int(mask.sum())), (left[mask], right[mask])),
+            shape=(len(self.df), len(self.df)),
         )
-
-        connected_touching_geometries = self._connect_touching_geometries(
-            disconnected_touching_geometries
-        )
-
-        return self._remove_duplicate_geometries(connected_touching_geometries)
-
-    def _get_df_indices(self, touching_geometries: dict) -> tuple[list, list]:
-        """Get df index to keep and drop.
-
-        Args:
-            touching_geometries: indices of unique connected touching geometries
-
-        Returns:
-            keep and drop index lists
-        """
-        keep_geometry_indices = set(touching_geometries.keys())
-        drop_geometry_indices = {
-            index for subset in touching_geometries.values() for index in subset
-        }
-        drop_geometry_indices = drop_geometry_indices - keep_geometry_indices
-
-        keep_indices = self.df.iloc[list(keep_geometry_indices)].index.tolist()
-        drop_indices = self.df.iloc[list(drop_geometry_indices), :].index.tolist()
-
-        return keep_indices, drop_indices
+        _, labels = connected_components(graph, directed=False)
+        return labels
 
     def dissolve_and_explode(self) -> gpd.GeoDataFrame:
         """Dissolve and explode touching geometries.
 
+        Geometries in the same connected component of touching geometries are
+        dissolved into a single geometry, keeping the attributes of the first
+        geometry of the component. Geometries in components of their own pass
+        through unchanged.
+
         Returns:
             GeoPandas dataframe with dissolved, touching geometries, and exploded geometry objects
         """
-        touching_geometries = self._get_touching_geometries()
+        labels = self._get_component_labels()
 
-        if len(touching_geometries) == 0:
-            return self.df
-
-        keep_indices, drop_indices = self._get_df_indices(touching_geometries)
-
-        dissolved_geometry = [
-            self.df.iloc[list(tgi)].dissolve().geometry[0] for _, tgi in touching_geometries.items()
-        ]
-
-        dissolved_df = gpd.GeoDataFrame(
-            {"geometry": dissolved_geometry},
-            index=[index for index in keep_indices],
+        return (
+            self.df.assign(grp=labels)
+            .dissolve(by="grp", aggfunc="first")
+            .explode(ignore_index=True)
+            .reset_index(drop=True)
         )
-
-        self.df.loc[keep_indices, "geometry"] = dissolved_df.loc[keep_indices, "geometry"]
-        self.df.drop(index=drop_indices, inplace=True)
-
-        return self.df.explode(ignore_index=True)
 
     def dissolve_and_explode_exterior(self) -> gpd.GeoDataFrame:
         """Dissolve and explode exterior geometry.
@@ -273,17 +177,18 @@ class Geometry:
 
     @timeit(True)
     @staticmethod
-    def _dissolve(df: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    def _dissolve(df: gpd.GeoDataFrame, merge_key: str | None = None) -> gpd.GeoDataFrame:
         """Dissolve geometry.
 
         Args:
             object_name: object name
             df: geopandas GeoDataFrame
+            merge_key: merge key column name
 
         Returns:
             dissolved geopandas GeoDataFrame
         """
-        return DissolveTouchingGeometry(df).dissolve_and_explode()
+        return DissolveTouchingGeometry(df, merge_key=merge_key).dissolve_and_explode()
 
     @timeit(True)
     @staticmethod
@@ -313,10 +218,11 @@ class Geometry:
             set_length: set length column
         """
         if dissolve is True:
+            merge_key = "vattenytaid" if self._name in self.config.ground_water else None
             if self._name in self.config.exteriorise:
                 self.df = Geometry._dissolve_exterior(self.df)
             else:
-                self.df = Geometry._dissolve(self.df)
+                self.df = Geometry._dissolve(self.df, merge_key)
         else:
             self.df = self.df.explode(ignore_index=True)
 

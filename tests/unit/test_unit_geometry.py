@@ -12,6 +12,11 @@ from lantmateriet import config
 from lantmateriet.geometry import DissolveTouchingGeometry, Geometry
 
 
+def square(x: float, y: float) -> Polygon:
+    """Unit square with its lower left corner at (x, y)."""
+    return Polygon([(x, y), (x + 1, y), (x + 1, y + 1), (x, y + 1), (x, y)])
+
+
 class TestUnitDissolveTouchingGeometry:
     """Unit tests of DissolveTouchingGeometry."""
 
@@ -21,147 +26,14 @@ class TestUnitDissolveTouchingGeometry:
         dtg = DissolveTouchingGeometry(df)
         testing.assert_geodataframe_equal(dtg.df, df)
 
-    def test_unit_dissolvetouchinggeometry_get_spatial_index(self):
-        """Unit test of DissolveTouchingGeometry _get_spatial_index method."""
-        df = gpd.GeoDataFrame({"geometry": [Point(1, 2), Point(2, 1)]})
-        sindex = DissolveTouchingGeometry(df)._get_spatial_index()
-        assert sindex == df.sindex
-
-    @pytest.mark.parametrize(
-        "input_geometry, touching_geometry, expected_result",
-        [
-            ([], [], {}),
-            (
-                [0, 1],
-                [1, 2],
-                {
-                    0: {
-                        0,
-                        1,
-                    },
-                    1: {
-                        1,
-                        2,
-                    },
-                },
-            ),
-            (
-                [0, 1, 0],
-                [1, 2, 3],
-                {
-                    0: {0, 1, 3},
-                    1: {
-                        1,
-                        2,
-                    },
-                },
-            ),
-        ],
-    )
-    def test_unit_dissolvetouchinggeometry_format_touching_geometries(
-        self, input_geometry, touching_geometry, expected_result
-    ):
-        """Unit test of DissolveTouchingGeometry _format_touching_geometries method.
-
-        Args:
-            input_geometry: input geometry index
-            touching_geometry: touching geometry index
-            expected_result: expected results
-        """
-        result = DissolveTouchingGeometry._format_touching_geometries(
-            input_geometry, touching_geometry
-        )
-        assert expected_result == result
-
-    @pytest.mark.parametrize(
-        "touching_geometry, expected_result",
-        [
-            ({}, {}),
-            (
-                {
-                    0: {
-                        0,
-                    },
-                    1: {
-                        1,
-                    },
-                },
-                {
-                    0: {
-                        0,
-                    },
-                    1: {
-                        1,
-                    },
-                },
-            ),
-            (
-                {
-                    0: {0, 1},
-                    1: {1, 2},
-                    2: {2},
-                    3: {3},
-                    4: {4, 0},
-                },
-                {
-                    0: {0, 1, 2, 4},
-                    1: {0, 1, 2, 4},
-                    2: {0, 1, 2, 4},
-                    3: {3},
-                    4: {0, 1, 2, 4},
-                },
-            ),
-        ],
-    )
-    def test_unit_dissolvetouchinggeometry_connect_touching_geometries(
-        self, touching_geometry, expected_result
-    ):
-        """Unit test of DissolveTouchingGeometry _connect_touching_geometries method.
-
-        Args:
-            touching_geometry: touching geometry index
-            expected_result: expected results
-        """
-        result = DissolveTouchingGeometry._connect_touching_geometries(touching_geometry)
-        assert expected_result == result
-
-    @pytest.mark.parametrize(
-        "touching_geometry, expected_result",
-        [
-            ({}, {}),
-            ({0: {0, 1}, 1: {1, 2}}, {0: [0, 1], 1: [1, 2]}),
-            (
-                {
-                    0: {0, 1, 2, 4},
-                    1: {0, 1, 2, 4},
-                    2: {0, 1, 2, 4},
-                    3: {3},
-                    4: {0, 1, 2, 4},
-                },
-                {
-                    3: [3],
-                    4: [0, 1, 2, 4],
-                },
-            ),
-        ],
-    )
-    def test_unit_dissolvetouchinggeometry_remove_duplicate_geometries(
-        self, touching_geometry, expected_result
-    ):
-        """Unit test of DissolveTouchingGeometry _remove_duplicate_geometries method.
-
-        Args:
-            touching_geometry: touching geometry index
-            expected_result: expected results
-        """
-        result = DissolveTouchingGeometry._remove_duplicate_geometries(touching_geometry)
-        assert expected_result == result
-
     @pytest.mark.parametrize(
         "df, expected_result",
         [
-            (gpd.GeoDataFrame({"geometry": []}), {}),
-            (gpd.GeoDataFrame({"geometry": [Point(1, 2), Point(1, 2)]}), {}),
+            (gpd.GeoDataFrame({"geometry": []}), []),
+            (
+                gpd.GeoDataFrame({"geometry": [Point(1, 2), Point(1, 2)]}),
+                [0, 0],
+            ),
             (
                 gpd.GeoDataFrame(
                     {
@@ -196,7 +68,7 @@ class TestUnitDissolveTouchingGeometry:
                         ]
                     }
                 ),
-                {0: [0, 1, 2]},
+                [0, 0, 0],
             ),
             (
                 gpd.GeoDataFrame(
@@ -232,129 +104,142 @@ class TestUnitDissolveTouchingGeometry:
                         ]
                     }
                 ),
-                {0: [0, 1]},
+                [0, 0, 1],
             ),
         ],
     )
-    def test_unit_dissolvetouchinggeometry_get_touching_geometries(self, df, expected_result):
-        """Unit test of DissolveTouchingGeometry _get_touching_geometries method.
+    def test_unit_dissolvetouchinggeometry_get_component_labels(self, df, expected_result):
+        """Unit test of DissolveTouchingGeometry _get_component_labels method.
 
         Args:
             df: df
-            expected_result: expected results
+            expected_result: expected component labels
         """
         dtg = DissolveTouchingGeometry(df)
-        result = dtg._get_touching_geometries()
-        assert expected_result == result
+        result = dtg._get_component_labels()
+        np.testing.assert_array_equal(result, expected_result)
 
     @pytest.mark.parametrize(
-        "df, touching_geometry, expected_result",
+        "df, merge_key, expected_result",
         [
-            (gpd.GeoDataFrame({"geometry": []}), {}, ([], [])),
             (
-                gpd.GeoDataFrame({"geometry": [Point(1, 2), Point(1, 2)]}, index=[1, 2]),
-                {},
-                ([], []),
+                gpd.GeoDataFrame(
+                    {"vattenytaid": ["a", "a"], "geometry": [square(0, 0), square(1, 0)]}
+                ),
+                "vattenytaid",
+                [0, 0],
             ),
             (
                 gpd.GeoDataFrame(
-                    {
-                        "geometry": [
-                            Polygon(
-                                (
-                                    (0.0, 0.0),
-                                    (1.0, 0.0),
-                                    (1.0, 1.0),
-                                    (0.0, 1.0),
-                                    (0.0, 0.0),
-                                )
-                            ),
-                            Polygon(
-                                (
-                                    (0.0, 0.0),
-                                    (1.0, 0.0),
-                                    (1.0, -1.0),
-                                    (0.0, -1.0),
-                                    (0.0, 0.0),
-                                )
-                            ),
-                            Polygon(
-                                (
-                                    (0.0, 1.0),
-                                    (1.0, 1.0),
-                                    (1.0, 2.0),
-                                    (0.0, 2.0),
-                                    (0.0, 1.0),
-                                )
-                            ),
-                        ]
-                    },
-                    index=[1, 2, 3],
+                    {"vattenytaid": ["a", "b"], "geometry": [square(0, 0), square(1, 0)]}
                 ),
-                {0: [0, 1, 2]},
-                ([1], [2, 3]),
+                "vattenytaid",
+                [0, 1],
             ),
             (
                 gpd.GeoDataFrame(
-                    {
-                        "geometry": [
-                            Polygon(
-                                (
-                                    (0.0, 0.0),
-                                    (1.0, 0.0),
-                                    (1.0, 1.0),
-                                    (0.0, 1.0),
-                                    (0.0, 0.0),
-                                )
-                            ),
-                            Polygon(
-                                (
-                                    (0.0, 0.0),
-                                    (1.0, 0.0),
-                                    (1.0, -1.0),
-                                    (0.0, -1.0),
-                                    (0.0, 0.0),
-                                )
-                            ),
-                            Polygon(
-                                (
-                                    (0.0, 2.0),
-                                    (1.0, 2.0),
-                                    (1.0, 3.0),
-                                    (0.0, 3.0),
-                                    (0.0, 2.0),
-                                )
-                            ),
-                        ]
-                    },
-                    index=[1, 2, 3],
+                    {"vattenytaid": ["a", None], "geometry": [square(0, 0), square(1, 0)]}
                 ),
-                {0: [0, 1]},
-                ([1], [2]),
+                "vattenytaid",
+                [0, 1],
+            ),
+            (
+                gpd.GeoDataFrame(
+                    {"vattenytaid": [None, None], "geometry": [square(0, 0), square(1, 0)]}
+                ),
+                "vattenytaid",
+                [0, 0],
+            ),
+            (
+                gpd.GeoDataFrame({"geometry": [square(0, 0), square(1, 0)]}),
+                "vattenytaid",
+                [0, 1],
+            ),
+            (
+                gpd.GeoDataFrame(
+                    {"vattenytaid": ["a", "b"], "geometry": [square(0, 0), square(1, 0)]}
+                ),
+                None,
+                [0, 0],
             ),
         ],
     )
-    def test_unit_dissolvetouchinggeometry_get_df_indices(
-        self, df, touching_geometry, expected_result
+    def test_unit_dissolvetouchinggeometry_get_component_labels_merge_key(
+        self, df, merge_key, expected_result
     ):
-        """Unit test of DissolveTouchingGeometry _get_df_indices method.
+        """Unit test of DissolveTouchingGeometry _get_component_labels merge key.
 
         Args:
             df: df
-            touching_geometry: touching geometry index
+            merge_key: merge key column name
+            expected_result: expected component labels
+        """
+        dtg = DissolveTouchingGeometry(df, merge_key=merge_key)
+        result = dtg._get_component_labels()
+        np.testing.assert_array_equal(result, expected_result)
+
+    @pytest.mark.parametrize(
+        "df, merge_key, expected_result",
+        [
+            (
+                gpd.GeoDataFrame(
+                    {
+                        "objekttyp": ["Sjö", "Sjö"],
+                        "vattenytaid": ["a", "a"],
+                        "geometry": [square(0, 0), square(1, 0)],
+                    }
+                ),
+                "vattenytaid",
+                gpd.GeoDataFrame(
+                    {
+                        "objekttyp": ["Sjö"],
+                        "vattenytaid": ["a"],
+                        "geometry": [Polygon([(0, 0), (2, 0), (2, 1), (0, 1), (0, 0)])],
+                    },
+                    index=[0],
+                ),
+            ),
+            (
+                gpd.GeoDataFrame(
+                    {
+                        "objekttyp": ["Sjö", "Sjö"],
+                        "vattenytaid": ["a", "b"],
+                        "geometry": [square(0, 0), square(1, 0)],
+                    }
+                ),
+                "vattenytaid",
+                gpd.GeoDataFrame(
+                    {
+                        "objekttyp": ["Sjö", "Sjö"],
+                        "vattenytaid": ["a", "b"],
+                        "geometry": [square(0, 0), square(1, 0)],
+                    },
+                    index=[0, 1],
+                ),
+            ),
+        ],
+    )
+    def test_unit_dissolvetouchinggeometry_dissolve_and_explode_merge_key(
+        self, df, merge_key, expected_result
+    ):
+        """Unit test of DissolveTouchingGeometry dissolve_and_explode merge key.
+
+        Args:
+            df: df
+            merge_key: merge key column name
             expected_result: expected results
         """
-        dtg = DissolveTouchingGeometry(df)
-        result = dtg._get_df_indices(touching_geometry)
-        assert expected_result == result
+        dtg = DissolveTouchingGeometry(df, merge_key=merge_key)
+        result = dtg.dissolve_and_explode()
+        testing.assert_geodataframe_equal(expected_result, result)
 
     @pytest.mark.parametrize(
         "df, expected_result",
         [
             (gpd.GeoDataFrame({"geometry": []}), gpd.GeoDataFrame({"geometry": []})),
             (
-                gpd.GeoDataFrame({"geometry": [Point(1, 2), Point(1, 2)]}, index=[1, 2]),
-                gpd.GeoDataFrame({"geometry": [Point(1, 2), Point(1, 2)]}, index=[1, 2]),
+                gpd.GeoDataFrame({"geometry": [Point(1, 2), Point(1, 2)]}),
+                gpd.GeoDataFrame({"geometry": [Point(1, 2)]}),
             ),
             (
                 gpd.GeoDataFrame(
@@ -463,6 +348,79 @@ class TestUnitDissolveTouchingGeometry:
                                 )
                             ),
                         ]
+                    },
+                    index=[0, 1],
+                ),
+            ),
+            (
+                gpd.GeoDataFrame(
+                    {
+                        "objekttyp": ["Sjö", "Sjö", "Sjö", "Åker"],
+                        "geometry": [
+                            Polygon(
+                                (
+                                    (0.0, 0.0),
+                                    (1.0, 0.0),
+                                    (1.0, 1.0),
+                                    (0.0, 1.0),
+                                    (0.0, 0.0),
+                                )
+                            ),
+                            Polygon(
+                                (
+                                    (1.0, 0.0),
+                                    (2.0, 0.0),
+                                    (2.0, 1.0),
+                                    (1.0, 1.0),
+                                    (1.0, 0.0),
+                                )
+                            ),
+                            Polygon(
+                                (
+                                    (0.0, 1.0),
+                                    (1.0, 1.0),
+                                    (1.0, 2.0),
+                                    (0.0, 2.0),
+                                    (0.0, 1.0),
+                                )
+                            ),
+                            Polygon(
+                                (
+                                    (10.0, 0.0),
+                                    (11.0, 0.0),
+                                    (11.0, 1.0),
+                                    (10.0, 1.0),
+                                    (10.0, 0.0),
+                                )
+                            ),
+                        ],
+                    }
+                ),
+                gpd.GeoDataFrame(
+                    {
+                        "objekttyp": ["Sjö", "Åker"],
+                        "geometry": [
+                            Polygon(
+                                (
+                                    (0.0, 0.0),
+                                    (2.0, 0.0),
+                                    (2.0, 1.0),
+                                    (1.0, 1.0),
+                                    (1.0, 2.0),
+                                    (0.0, 2.0),
+                                    (0.0, 0.0),
+                                )
+                            ),
+                            Polygon(
+                                (
+                                    (10.0, 0.0),
+                                    (11.0, 0.0),
+                                    (11.0, 1.0),
+                                    (10.0, 1.0),
+                                    (10.0, 0.0),
+                                )
+                            ),
+                        ],
                     },
                     index=[0, 1],
                 ),
@@ -647,12 +605,12 @@ class TestUnitGeometry:
     def test_unit_dissolve(self, mock_DissolveTouchingGeometry):
         """Unit test of Geometry _dissolve method."""
         df = gpd.GeoDataFrame()
-        result = Geometry._dissolve(df)
+        result = Geometry._dissolve(df, "vattenytaid")
 
         assert (
             mock_DissolveTouchingGeometry.return_value.dissolve_and_explode.return_value == result
         )
-        mock_DissolveTouchingGeometry.assert_called_with(df)
+        mock_DissolveTouchingGeometry.assert_called_with(df, merge_key="vattenytaid")
         mock_DissolveTouchingGeometry.return_value.dissolve_and_explode.assert_called()
 
     @patch("lantmateriet.geometry.DissolveTouchingGeometry")
