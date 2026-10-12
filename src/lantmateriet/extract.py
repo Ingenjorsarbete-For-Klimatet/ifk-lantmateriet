@@ -66,7 +66,7 @@ def parallel_process(
         geo_object.save(target_path, output_name)
 
         if "mark" in geo_object._file_path:
-            return geo_object.df.dissolve().explode(index_parts=False)
+            return geo_object.df
 
     return None
 
