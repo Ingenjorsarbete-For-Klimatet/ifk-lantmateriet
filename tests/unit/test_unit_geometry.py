@@ -759,3 +759,30 @@ class TestUnitGeometry:
                 call().to_file("path_to_save/path/layer/file.fgb", driver="FlatGeobuf"),
             ]
         )
+
+
+class TestUnitMakeValidPolygons:
+    """Unit tests of make_valid_polygons."""
+
+    def test_unit_make_valid_polygons(self):
+        """Unit test that valid polygons pass through unchanged."""
+        from lantmateriet.geometry import make_valid_polygons
+
+        valid = Polygon(((0, 0), (1, 0), (1, 1), (0, 0)))
+        assert make_valid_polygons([valid]) == [valid]
+
+    def test_unit_make_valid_polygons_repairs_self_touching_facing(self):
+        """Unit test that a self-touching face is repaired into valid polygons."""
+        from lantmateriet.geometry import make_valid_polygons
+
+        # A polygon whose ring passes through the middle vertex twice,
+        # as polygonize can produce where three or more edges meet.
+        bowtie = Polygon(((0, 0), (2, 0), (1, 1), (2, 2), (0, 2), (1, 1), (0, 0)))
+        assert not bowtie.is_valid
+
+        repaired = make_valid_polygons([bowtie])
+
+        assert repaired != [bowtie]
+        assert all(polygon.is_valid for polygon in repaired)
+        assert all(polygon.geom_type == "Polygon" for polygon in repaired)
+        assert len(repaired) > 1

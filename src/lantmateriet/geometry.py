@@ -1,5 +1,6 @@
 """Geometry module."""
 
+import logging
 import os
 from os import path
 from typing import Union
@@ -9,13 +10,83 @@ import numpy as np
 import pandas as pd
 from scipy.sparse import coo_matrix
 from scipy.sparse.csgraph import connected_components
+from shapely import get_num_coordinates, make_valid
 from shapely.ops import polygonize
 
 from lantmateriet import config
 from lantmateriet.utils import timeit
 
+logger = logging.getLogger(__name__)
+
 TOUCHING_MAX_DIST = 1e-5
 FILE_ENDING_DRIVERS_MAP = {"geojson": "GeoJson", "fgb": "FlatGeobuf"}
+
+
+def make_valid_polygons(polygons) -> list:
+    """Return valid polygons, repairing invalid ones.
+
+    polygonize creates faces from a noded edge arrangement; where three or
+    more edges meet at a vertex, a face's boundary passes through that vertex
+    more than once, which makes the polygon invalid. Only the polygonal parts
+    of a repair are kept.
+
+    Args:
+        polygons: iterable of polygons
+
+    Returns:
+        list of valid polygons
+    """
+    valid_polygons = []
+    total_polygons = 0
+    repaired_polygons = 0
+    coordinates_before = 0
+    coordinates_after = 0
+    area_before = 0.0
+    area_after = 0.0
+    dropped_parts = 0
+
+    for polygon in polygons:
+        total_polygons += 1
+        if polygon.is_valid:
+            valid_polygons.append(polygon)
+            continue
+
+        repaired_polygons += 1
+        coordinates_before += int(get_num_coordinates(polygon))
+        area_before += polygon.area
+
+        repaired = make_valid(polygon)
+        if repaired.geom_type == "Polygon":
+            repaired = [repaired]
+        elif hasattr(repaired, "geoms"):
+            repaired = list(repaired.geoms)
+        else:
+            repaired = []
+
+        for geometry in repaired:
+            if geometry.geom_type == "Polygon":
+                valid_polygons.append(geometry)
+                coordinates_after += int(get_num_coordinates(geometry))
+                area_after += geometry.area
+            else:
+                dropped_parts += 1
+
+    if repaired_polygons == 0:
+        logger.info("No invalid polygons of %d", total_polygons)
+    else:
+        logger.info(
+            "Repaired %d invalid polygons of %d: coordinates %d to %d, "
+            "area %.2f to %.2f, dropped %d non-polygonal parts",
+            repaired_polygons,
+            total_polygons,
+            coordinates_before,
+            coordinates_after,
+            area_before,
+            area_after,
+            dropped_parts,
+        )
+
+    return valid_polygons
 
 
 class DissolveTouchingGeometry:
@@ -105,7 +176,7 @@ class DissolveTouchingGeometry:
         exploded_geometry = dissolved_geometry.explode(ignore_index=True)
         return gpd.GeoDataFrame(
             {
-                "geometry": [x for x in polygonize(exploded_geometry.geometry)],
+                "geometry": make_valid_polygons(polygonize(exploded_geometry.geometry)),
                 "objekttyp": []
                 if len(set(self.df["objekttyp"])) < 1
                 else self.df["objekttyp"].iloc[0],
